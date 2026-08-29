@@ -1,13 +1,25 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+
+/* ── Tipografía ────────────────────────────────────────────────
+   Cinzel: capitales romanas/medievales — títulos, botones, labels.
+   EB Garamond: serif humanista del s.XVI — cuerpo de texto.
+   Figtree se conserva para datos densos (tablas, stats, dados) donde
+   una serif perjudica la legibilidad a tamaños pequeños.            */
+@import "@fontsource/cinzel/400.css";
+@import "@fontsource/cinzel/600.css";
+@import "@fontsource/cinzel/700.css";
+@import "@fontsource-variable/eb-garamond";
 @import "@fontsource-variable/figtree";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: "Figtree Variable", sans-serif;
+  --font-heading: "Cinzel", "Trajan Pro", Georgia, serif;
+  --font-sans: "EB Garamond Variable", Georgia, "Times New Roman", serif;
+  --font-ui: "Figtree Variable", system-ui, sans-serif;
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,98 +51,280 @@
   --color-card: var(--card);
   --color-foreground: var(--foreground);
   --color-background: var(--background);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+
+  /* Acentos temáticos, disponibles como bg-gold / text-blood / etc. */
+  --color-gold: var(--gold);
+  --color-gold-muted: var(--gold-muted);
+  --color-blood: var(--blood);
+  --color-arcane: var(--arcane);
+  --color-poison: var(--poison);
+  --color-parchment: var(--parchment);
+  --color-ink: var(--ink);
+
+  /* Radios contenidos: lo medieval es angular, no pastilla. */
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) * 1.25);
+  --radius-2xl: calc(var(--radius) * 1.5);
+  --radius-3xl: calc(var(--radius) * 1.75);
+  --radius-4xl: calc(var(--radius) * 2);
 }
 
+/* ══════════════════════════════════════════════════════════════
+   LIGHT — "Pergamino": vitela envejecida, tinta sepia, sellos de
+   lacre. Es el modo por defecto de las hojas de personaje.
+   ══════════════════════════════════════════════════════════════ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --parchment: oklch(0.938 0.026 84);
+  --ink: oklch(0.246 0.032 52);
+
+  --background: oklch(0.938 0.026 84);
+  --foreground: oklch(0.246 0.032 52);
+
+  /* Las cards son vitela más clara sobre el pergamino del fondo. */
+  --card: oklch(0.966 0.019 88);
+  --card-foreground: oklch(0.246 0.032 52);
+  --popover: oklch(0.972 0.016 88);
+  --popover-foreground: oklch(0.246 0.032 52);
+
+  /* Primary = lacre de sello. Acción principal, CTAs. */
+  --primary: oklch(0.398 0.132 26);
+  --primary-foreground: oklch(0.966 0.024 86);
+
+  --secondary: oklch(0.888 0.032 82);
+  --secondary-foreground: oklch(0.302 0.045 48);
+
+  --muted: oklch(0.898 0.028 84);
+  --muted-foreground: oklch(0.472 0.036 58);
+
+  /* Accent = pan de oro. Realces, estados activos. */
+  --accent: oklch(0.868 0.062 82);
+  --accent-foreground: oklch(0.298 0.058 52);
+
+  --destructive: oklch(0.472 0.168 27);
+
+  --border: oklch(0.812 0.038 76);
+  --input: oklch(0.878 0.028 82);
+  --ring: oklch(0.582 0.108 68);
+
+  /* Acentos temáticos */
+  --gold: oklch(0.662 0.116 78);
+  --gold-muted: oklch(0.782 0.062 80);
+  --blood: oklch(0.398 0.132 26);
+  --arcane: oklch(0.452 0.128 292);
+  --poison: oklch(0.512 0.106 142);
+
+  /* Charts: oro, sangre, arcano, veneno, bronce. */
+  --chart-1: oklch(0.662 0.116 78);
+  --chart-2: oklch(0.472 0.152 26);
+  --chart-3: oklch(0.472 0.122 292);
+  --chart-4: oklch(0.532 0.102 142);
+  --chart-5: oklch(0.552 0.078 52);
+
+  --radius: 0.375rem;
+
+  --sidebar: oklch(0.906 0.034 80);
+  --sidebar-foreground: oklch(0.276 0.036 52);
+  --sidebar-primary: oklch(0.398 0.132 26);
+  --sidebar-primary-foreground: oklch(0.966 0.024 86);
+  --sidebar-accent: oklch(0.862 0.052 80);
+  --sidebar-accent-foreground: oklch(0.298 0.045 50);
+  --sidebar-border: oklch(0.802 0.042 76);
+  --sidebar-ring: oklch(0.582 0.108 68);
+
+  /* Textura de fibra de pergamino: dos gradientes muy sutiles que
+     rompen el plano de color sin costar una imagen. */
+  --texture-parchment:
+    radial-gradient(ellipse 80% 60% at 20% 0%, oklch(1 0.03 88 / 0.55), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 90% 100%, oklch(0.86 0.05 62 / 0.35), transparent 65%);
 }
 
+/* ══════════════════════════════════════════════════════════════
+   DARK — "Cripta": piedra húmeda a la luz de antorchas. Para el
+   tablero y las sesiones nocturnas.
+   ══════════════════════════════════════════════════════════════ */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --parchment: oklch(0.902 0.036 84);
+  --ink: oklch(0.152 0.018 48);
+
+  --background: oklch(0.168 0.018 46);
+  --foreground: oklch(0.902 0.026 82);
+
+  --card: oklch(0.218 0.022 46);
+  --card-foreground: oklch(0.902 0.026 82);
+  --popover: oklch(0.208 0.022 46);
+  --popover-foreground: oklch(0.902 0.026 82);
+
+  /* En penumbra el oro lidera: es lo que refleja la antorcha. */
+  --primary: oklch(0.722 0.128 78);
+  --primary-foreground: oklch(0.178 0.024 48);
+
+  --secondary: oklch(0.282 0.024 48);
+  --secondary-foreground: oklch(0.892 0.026 82);
+
+  --muted: oklch(0.272 0.020 48);
+  --muted-foreground: oklch(0.672 0.028 74);
+
+  --accent: oklch(0.332 0.044 62);
+  --accent-foreground: oklch(0.912 0.038 82);
+
+  --destructive: oklch(0.588 0.182 27);
+
+  --border: oklch(0.902 0.04 82 / 14%);
+  --input: oklch(0.902 0.04 82 / 12%);
+  --ring: oklch(0.652 0.106 76);
+
+  --gold: oklch(0.762 0.126 80);
+  --gold-muted: oklch(0.542 0.078 76);
+  --blood: oklch(0.562 0.168 27);
+  --arcane: oklch(0.632 0.152 292);
+  --poison: oklch(0.652 0.132 142);
+
+  --chart-1: oklch(0.762 0.126 80);
+  --chart-2: oklch(0.588 0.172 27);
+  --chart-3: oklch(0.632 0.152 292);
+  --chart-4: oklch(0.652 0.132 142);
+  --chart-5: oklch(0.632 0.072 52);
+
+  --sidebar: oklch(0.198 0.022 46);
+  --sidebar-foreground: oklch(0.892 0.026 82);
+  --sidebar-primary: oklch(0.722 0.128 78);
+  --sidebar-primary-foreground: oklch(0.178 0.024 48);
+  --sidebar-accent: oklch(0.302 0.036 58);
+  --sidebar-accent-foreground: oklch(0.902 0.032 82);
+  --sidebar-border: oklch(0.902 0.04 82 / 12%);
+  --sidebar-ring: oklch(0.652 0.106 76);
+
+  /* Luz de antorcha desde arriba, penumbra en los bordes. */
+  --texture-parchment:
+    radial-gradient(ellipse 90% 70% at 50% -10%, oklch(0.42 0.06 68 / 0.40), transparent 65%),
+    radial-gradient(ellipse 60% 50% at 10% 110%, oklch(0.30 0.05 30 / 0.30), transparent 70%);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+    background-image: var(--texture-parchment);
+    background-attachment: fixed;
+    font-feature-settings: "liga" 1, "kern" 1, "onum" 1;
   }
+
   html {
     @apply font-sans;
   }
+
+  /* Los títulos llevan capitales con tracking amplio — así se
+     componían los encabezados en imprenta antigua. */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+    letter-spacing: 0.02em;
+  }
+  h1, h2 {
+    letter-spacing: 0.04em;
+  }
+
+  /* Datos densos (tablas de stats, tiradas, iniciativa) en sans:
+     una serif a 12px con números tabulares se lee peor. */
+  table, input, textarea, select, code, kbd, pre {
+    font-family: var(--font-ui);
+  }
+
+  /* Campos "grabados": el fondo se hunde respecto al pergamino, como
+     una casilla impresa en la hoja de personaje. Se define aquí y no
+     por componente porque la misma cadena de clases estaba repetida
+     literalmente en ~14 sitios del código. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  textarea,
+  select {
+    font-feature-settings: "tnum" 1;
+    background-color: color-mix(in oklab, var(--color-foreground) 5%, transparent);
+    box-shadow: inset 0 1px 2px oklch(0 0 0 / 0.10);
+  }
+  .dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  .dark textarea,
+  .dark select {
+    background-color: color-mix(in oklab, var(--color-background) 55%, transparent);
+    box-shadow: inset 0 1px 3px oklch(0 0 0 / 0.35);
+  }
+
+  input:focus-visible, textarea:focus-visible, select:focus-visible {
+    box-shadow:
+      inset 0 1px 2px oklch(0 0 0 / 0.08),
+      0 0 0 3px color-mix(in oklab, var(--color-gold) 25%, transparent);
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: color-mix(in oklab, var(--color-muted-foreground) 75%, transparent);
+  }
+
+  /* Las etiquetas de campo se componen como rúbricas: versalitas con
+     tracking, no texto corrido. `label.flex-col` es el patrón de campo
+     en este código (el texto es un nodo suelto junto al control);
+     los labels inline de checkbox quedan fuera a propósito. */
+  label:is(.flex-col) {
+    @apply font-heading tracking-[0.07em] uppercase;
+    font-size: 0.6875rem;
+  }
+  /* Los controles dentro recuperan la sans y su caja normal. */
+  label:is(.flex-col) :is(input, textarea, select) {
+    @apply font-ui tracking-normal normal-case;
+    font-size: 0.875rem;
+  }
+  /* Igual para el patrón <span> de Field.tsx. */
+  label > span:first-child {
+    @apply font-heading tracking-[0.07em] uppercase;
+    font-size: 0.6875rem;
+  }
+
   .maplibregl-popup-content {
     @apply bg-transparent! shadow-none! p-0! rounded-none!;
   }
   .maplibregl-popup-tip {
     @apply hidden!;
+  }
+}
+
+@layer components {
+  /* ── Filete decorativo ──────────────────────────────────────
+     Regla horizontal con un rombo centrado, como los separadores
+     de los manuales. Uso: <hr class="rule-ornate" />              */
+  .rule-ornate {
+    @apply relative border-0 h-px my-6;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--color-gold-muted) 20%,
+      var(--color-gold-muted) 80%,
+      transparent
+    );
+  }
+  .rule-ornate::after {
+    content: "";
+    @apply absolute left-1/2 top-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rotate-45;
+    background: var(--color-gold);
+    box-shadow: 0 0 0 3px var(--color-background);
+  }
+
+  /* ── Capitular ──────────────────────────────────────────────
+     Primera letra grande al estilo manuscrito iluminado.
+     Uso: <p class="drop-cap">Érase una vez…</p>                   */
+  .drop-cap::first-letter {
+    @apply font-heading float-left mr-2 text-5xl leading-[0.85] pt-1;
+    color: var(--color-gold);
+  }
+
+  /* ── Marco de vitela ────────────────────────────────────────
+     Doble filete dorado. Para paneles destacados (hoja de
+     personaje, resultado de tirada).                              */
+  .frame-vellum {
+    box-shadow:
+      inset 0 0 0 1px var(--color-gold-muted),
+      inset 0 0 0 4px var(--color-card),
+      inset 0 0 0 5px color-mix(in oklab, var(--color-gold-muted) 45%, transparent);
   }
 }

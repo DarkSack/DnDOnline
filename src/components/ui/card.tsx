@@ -12,7 +12,16 @@ function Card({
       data-slot="card"
       data-size={size}
       className={cn(
-        "group/card flex flex-col gap-6 overflow-hidden rounded-2xl bg-card py-6 text-sm text-card-foreground ring-1 ring-foreground/10 has-[>img:first-child]:pt-0 data-[size=sm]:gap-4 data-[size=sm]:py-4 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
+        // Hoja de vitela: esquinas apenas matadas, filete dorado en el
+        // borde y sombra proyectada como si reposara sobre la mesa.
+        "group/card relative flex flex-col gap-6 overflow-hidden rounded-md bg-card py-6 text-sm text-card-foreground",
+        "border border-border/80",
+        "shadow-[0_1px_2px_oklch(0_0_0/0.06),0_4px_12px_-4px_oklch(0_0_0/0.12)]",
+        "dark:shadow-[0_1px_2px_oklch(0_0_0/0.30),0_4px_16px_-4px_oklch(0_0_0/0.45)]",
+        // Hilo de oro interior, muy tenue — se percibe sin llamar la atención.
+        "before:pointer-events-none before:absolute before:inset-px before:rounded-[calc(var(--radius)-1px)] before:ring-1 before:ring-inset before:ring-gold/15",
+        "has-[>img:first-child]:pt-0 data-[size=sm]:gap-4 data-[size=sm]:py-4",
+        "*:[img:first-child]:rounded-t-md *:[img:last-child]:rounded-b-md",
         className
       )}
       {...props}
@@ -37,7 +46,10 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-title"
-      className={cn("font-heading text-base font-medium", className)}
+      className={cn(
+        "font-heading text-base font-semibold tracking-[0.06em]",
+        className
+      )}
       {...props}
     />
   )
