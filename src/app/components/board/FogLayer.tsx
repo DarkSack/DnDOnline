@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import type { Graphics } from "pixi.js";
 import type { GridConfig } from "@/engine/board";
+import { boardPalette } from "./palette";
 
 export type FogLayerProps = {
   grid: GridConfig;
@@ -15,7 +16,7 @@ export type FogLayerProps = {
 
 const OPAQUE = 0.92;
 const TRANSLUCENT = 0.45;
-const COLOR = 0x0a0a0a;
+const COLOR = boardPalette.fog;
 
 /**
  * Dibuja rectángulos negros sobre las celdas ocultas.

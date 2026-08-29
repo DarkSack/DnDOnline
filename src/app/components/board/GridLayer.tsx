@@ -5,6 +5,7 @@ import {
   type GridConfig,
   type Viewport,
 } from "@/engine/board";
+import { boardPalette } from "./palette";
 
 export type GridLayerProps = {
   grid: GridConfig;
@@ -12,10 +13,10 @@ export type GridLayerProps = {
   canvasSize: { w: number; h: number };
 };
 
-const LINE_COLOR = 0x555555;
-const LINE_ALPHA = 0.4;
-const BG_COLOR = 0x1a1a1a;
-const BG_ALPHA = 0.35;
+const LINE_COLOR = boardPalette.gridLine;
+const LINE_ALPHA = boardPalette.gridLineAlpha;
+const BG_COLOR = boardPalette.gridBg;
+const BG_ALPHA = boardPalette.gridBgAlpha;
 
 export function GridLayer({ grid, viewport, canvasSize }: GridLayerProps) {
   const draw = useCallback(

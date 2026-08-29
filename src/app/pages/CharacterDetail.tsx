@@ -261,10 +261,10 @@ export default function CharacterDetailPage() {
             <img
               src={sheet.identity.avatarUrl}
               alt=""
-              className="size-16 rounded-full border border-border object-cover"
+              className="size-16 rounded-full object-cover ring-2 ring-gold/50 ring-offset-2 ring-offset-background"
             />
           ) : (
-            <div className="flex size-16 items-center justify-center rounded-full border border-border bg-muted text-lg font-medium text-muted-foreground">
+            <div className="flex size-16 items-center justify-center rounded-full bg-accent font-heading text-xl font-semibold text-accent-foreground ring-2 ring-gold/50 ring-offset-2 ring-offset-background">
               {character.name.slice(0, 1).toUpperCase()}
             </div>
           )}
@@ -341,13 +341,15 @@ export default function CharacterDetailPage() {
                 return (
                   <li
                     key={k}
-                    className="rounded-md border border-border bg-input/20 p-2"
+                    className="frame-vellum rounded-md border border-border bg-card p-2"
                   >
-                    <div className="text-[10px] text-muted-foreground">
+                    <div className="font-heading text-[10px] tracking-[0.1em] text-muted-foreground uppercase">
                       {ABILITY_SHORT[k]}
                     </div>
-                    <div className="font-mono text-lg">{s}</div>
-                    <div className="font-mono text-xs text-muted-foreground">
+                    <div className="font-mono text-2xl leading-tight font-semibold">
+                      {s}
+                    </div>
+                    <div className="font-mono text-xs text-gold">
                       {formatModifier(abilityModifier(s))}
                     </div>
                     <div className="sr-only">{ABILITY_LABELS[k]}</div>

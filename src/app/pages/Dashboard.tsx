@@ -123,10 +123,10 @@ export default function DashboardPage() {
                       <img
                         src={c.sheet.identity.avatarUrl}
                         alt=""
-                        className="size-10 rounded-full border border-border object-cover"
+                        className="size-10 rounded-full object-cover ring-1 ring-gold/40"
                       />
                     ) : (
-                      <div className="flex size-10 items-center justify-center rounded-full border border-border bg-muted text-sm font-medium text-muted-foreground">
+                      <div className="flex size-10 items-center justify-center rounded-full bg-accent font-heading text-sm font-semibold text-accent-foreground ring-1 ring-gold/40">
                         {c.name.slice(0, 1).toUpperCase()}
                       </div>
                     )}

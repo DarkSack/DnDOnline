@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import type { Graphics } from "pixi.js";
 import type { GridConfig } from "@/engine/board";
+import { boardPalette } from "./palette";
 
 export type VisibilityLayerProps = {
   grid: GridConfig;
@@ -8,7 +9,7 @@ export type VisibilityLayerProps = {
   visible: Set<string>;
 };
 
-const SHADOW_COLOR = 0x0a0a0a;
+const SHADOW_COLOR = boardPalette.shadow;
 const SHADOW_ALPHA = 0.85;
 
 /**

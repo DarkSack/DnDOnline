@@ -1,14 +1,15 @@
 import { useCallback } from "react";
 import type { Graphics } from "pixi.js";
 import type { GridConfig } from "@/engine/board";
+import { boardPalette } from "./palette";
 
 export type WallsLayerProps = {
   grid: GridConfig;
   walls: Set<string>;
 };
 
-const WALL_COLOR = 0x18181b; // zinc-900
-const WALL_STROKE = 0x27272a; // zinc-800
+const WALL_COLOR = boardPalette.wall;
+const WALL_STROKE = boardPalette.wallStroke;
 
 /** Renderiza celdas de pared como bloques sólidos con borde. */
 export function WallsLayer({ grid, walls }: WallsLayerProps) {

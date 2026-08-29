@@ -7,6 +7,7 @@ import {
   type BoardEntity,
   type GridConfig,
 } from "@/engine/board";
+import { boardPalette } from "./palette";
 
 export type TokenProps = {
   entity: BoardEntity;
@@ -16,7 +17,7 @@ export type TokenProps = {
   onPointerDown: (entity: BoardEntity, e: FederatedPointerEvent) => void;
 };
 
-const SELECTION_RING_COLOR = 0x22c55e; // emerald-500
+const SELECTION_RING_COLOR = boardPalette.selectionRing;
 
 export function Token({
   entity,
@@ -37,13 +38,13 @@ export function Token({
       g.clear();
       // Sombra ligera
       g.circle(half + 1, half + 2, radius).fill({
-        color: 0x000000,
+        color: boardPalette.tokenTextShadow,
         alpha: 0.35,
       });
       // Cuerpo del token
       g.circle(half, half, radius)
         .fill(fill)
-        .stroke({ color: 0xffffff, width: 2, alpha: 0.9 });
+        .stroke({ color: boardPalette.tokenStroke, width: 2, alpha: 0.9 });
       // Ring de selección
       if (selected) {
         g.circle(half, half, radius + 4).stroke({
@@ -57,7 +58,7 @@ export function Token({
   );
 
   const textStyle: TextStyleOptions = {
-    fill: 0xffffff,
+    fill: boardPalette.tokenText,
     fontSize: Math.max(12, sizePx * 0.4),
     fontWeight: "700",
     fontFamily: "system-ui, sans-serif",

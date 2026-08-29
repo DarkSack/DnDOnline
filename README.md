@@ -56,6 +56,24 @@ Los detalles de la instancia Supabase están en `.env.example`. El schema
 está en Supabase migrations aplicadas directamente vía el MCP durante el
 desarrollo.
 
+### Modo preview de UI (sin backend)
+
+Para trabajar el diseño de las pantallas que viven detrás del login sin
+levantar Supabase, añade a `.env.local`:
+
+```env
+VITE_UI_PREVIEW=true
+```
+
+Da por autenticado a un usuario ficticio y sustituye el cliente de
+Supabase por un stub con una campaña, tres personajes, una sala con
+combate en curso, mensajes y tiradas de ejemplo. Todo vive en
+`src/services/preview.ts`; con la variable ausente o distinta de `true`
+no se ejecuta nada de eso.
+
+Es sólo para maquetar: los filtros de igualdad se emulan, pero las
+escrituras no persisten y el realtime nunca emite.
+
 ### Scripts
 
 ```bash
