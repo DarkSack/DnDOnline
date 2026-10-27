@@ -7,7 +7,7 @@ y tiene interfaz funcional.
 
 | # | Tarea | Estado |
 |---|-------|--------|
-| 1.1 | Monorepo, TypeScript estricto, CI (tipos, pruebas con Postgres real, build, `npm audit`) | ✅ en verde en GitHub. El paso E2E se añadió el 2026-10-27 y aún no ha corrido allí |
+| 1.1 | Monorepo, TypeScript estricto, CI (tipos, pruebas con Postgres real, build, `npm audit`, E2E) | ✅ en verde en GitHub, E2E incluida desde el 2026-10-27 |
 | 1.2 | Identidad: registro, login, logout, logout global, verificación de correo, recuperación | ✅ excepto el **envío real de correo (SMTP)** |
 | 1.3 | Campañas: crear, listar, roles, invitaciones con usos y caducidad, revocar, expulsar, cambiar rol | ✅ |
 | 1.4 | Mesa en tiempo real: chat público y susurro al DM, dados públicos, privados y secretos con ventaja/desventaja, presencia, historial filtrado | ✅ |
