@@ -1,0 +1,19 @@
+# Desarrollo: `docker compose up -d db`. Producción: ver docs/INSTALACION.md.
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: dndonline
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dndonline-dev}
+      POSTGRES_DB: dndonline
+    ports:
+      - "127.0.0.1:54329:5432"
+    volumes:
+      - db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "dndonline"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  db:

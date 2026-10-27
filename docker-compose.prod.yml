@@ -1,0 +1,41 @@
+# Producción en un VPS: ver docs/INSTALACION.md.
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dndonline
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?define POSTGRES_PASSWORD}
+      POSTGRES_DB: dndonline
+    volumes:
+      - db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "dndonline"]
+      interval: 5s
+      retries: 10
+
+  server:
+    build: { context: ., target: server }
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://dndonline:${POSTGRES_PASSWORD}@db:5432/dndonline
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?define PUBLIC_ORIGIN}
+    depends_on:
+      db: { condition: service_healthy }
+
+  web:
+    build: { context: ., target: web }
+    restart: unless-stopped
+    environment:
+      DNDONLINE_DOMAIN: ${DNDONLINE_DOMAIN:-:80}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - caddy:/data
+    depends_on: [server]
+
+volumes:
+  db:
+  caddy:

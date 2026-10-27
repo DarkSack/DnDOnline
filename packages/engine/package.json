@@ -1,0 +1,20 @@
+{
+  "name": "@dndonline/engine",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./board": "./src/board/index.ts",
+    "./character": "./src/character/index.ts",
+    "./combat": "./src/combat/index.ts",
+    "./dice": "./src/dice/index.ts",
+    "./character/types": "./src/character/types.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vitest": "^4.1.12"
+  }
+}
