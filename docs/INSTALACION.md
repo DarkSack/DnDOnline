@@ -13,6 +13,10 @@ npm run dev:web      # web en http://localhost:5180
 
 Pruebas: `npm test`. Las del servidor crean y destruyen la base `dndonline_test` en el mismo Postgres.
 
+Pruebas de extremo a extremo: `npm run e2e`. Levantan su propia API (:3100) y web (:5190) contra la base
+`dndonline_e2e`, que recrean en cada ejecución, así que no chocan con los servidores de desarrollo. En local usan el
+Microsoft Edge instalado; en otro equipo sin Edge, `npx playwright install chromium` y `CI=1 npm run e2e`.
+
 Sin SMTP, los enlaces de verificación y recuperación aparecen en el log del servidor (`"correo (solo desarrollo)"`).
 
 ## Producción con Docker Compose (VPS)

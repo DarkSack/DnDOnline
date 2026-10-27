@@ -9,8 +9,8 @@ WebSockets propios, autohospedaje con Docker y presupuesto cero.
 
 El repo se convirtió en monorepo: el motor pasó a `packages/engine` (99 pruebas), la web a `apps/web` y el servidor
 (identidad, campañas, invitaciones y mesa) a `apps/server`. Se prototipó primero aparte, como «SacknD», y se fusionó
-aquí. Las pantallas antiguas (tablero PixiJS, creador de personajes, combate) se conservan tras el modo preview y se
-migran una a una.
+aquí. Las pantallas antiguas (tablero PixiJS, creador de personajes, combate) se migraron una a una al servidor propio;
+el 2026-10-27 se borró el último código de Supabase junto con el modo preview.
 
 ## D2. Monolito modular con Fastify y `postgres` (sin ORM)
 - **Fastify 5:** tiene WebSocket, cookies y límite de frecuencia como plugins oficiales, y buen rendimiento.
@@ -77,3 +77,16 @@ consultado el 2026-10-26).
 Todavía no se ha importado nada del SRD. Cuando se haga, el paquete de reglas llevará en su manifiesto la procedencia,
 la versión, la licencia y el texto de atribución exacto. **Nada fuera del SRD:** ni libros, ni nombres de producto, ni
 la marca D&D como marca propia.
+
+## D11. Combate en el servidor, ligado a la escena activa
+El combate es una fila de `combats` por campaña con el estado del motor (`engine/combat`) en JSON. La iniciativa la
+tira el servidor con `crypto.randomInt`. El DM y el co-DM lo inician, añaden y quitan fichas y lo terminan; un jugador
+solo puede pasar el turno de una ficha suya. Cada «siguiente turno» lleva de quién creía el cliente que era el turno: si
+ya cambió, no se avanza otra vez (doble clic, o DM y jugador pulsando a la vez).
+
+- **Visibilidad:** el orden de turnos pasa por `boardViewFor`. Quien no dirige solo ve a los combatientes que ve en el
+  tablero, y de enemigos y NPC no ve el d20 ni el bonus. Si le toca a alguien que no ve, el turno aparece como «alguien
+  que no ves».
+- **Escena:** el combate pertenece a la escena activa. Cambiar de escena lo termina y borrar la escena también; borrar
+  una ficha la saca del orden sin cambiar de quién es el turno.
+- **Cambiaría si** hace falta preparar un combate en una escena sin activarla, o guardar el historial de combates.

@@ -22,10 +22,8 @@ origen. Eso es lo que permite la cookie `SameSite=Lax` y la comprobación de `Or
 | `apps/server` | Monolito modular. Un módulo por dominio en `src/modules/`. |
 | `apps/web` | SPA en React 19, Tailwind 4, shadcn/ui (tema pergamino/cripta) y react-router. |
 
-### Código antiguo (sin migrar)
-Solo queda el combate (`components/combat`, `services/combat.ts`, `services/entities.ts`, `realtime/use-live-combat.ts`),
-escrito contra Supabase y sin ninguna ruta que lo muestre. `services/supabase.ts` devuelve el stub de
-`services/preview.ts`. Se migra en la tarea 1.10 del plan.
+Ya no queda código de Supabase: el combate fue lo último en migrarse, el 2026-10-27, y con él se borraron el stub y el
+modo preview.
 
 ## Módulos del servidor
 
@@ -34,7 +32,7 @@ escrito contra Supabase y sin ninguna ruta que lo muestre. `services/supabase.ts
 | `identity` | Registro, sesiones, verificación de correo, recuperación, revocación | `requireUser(req)`, `req.user` |
 | `campaigns` | Campañas, miembros, roles, invitaciones | `authorize(sql, campaignId, userId, action)`, `can(role, action)` |
 | `table` | Sala en tiempo real: chat, dados, presencia | eventos `TableEvent` y la función `viewFor` |
-| `board` | Escenas (mapa, cuadrícula, niebla, paredes, imagen) y fichas en el tablero. Los cambios llegan por el socket de la mesa y cada conectado recibe su vista | `boardViewFor`, `broadcastBoard(sql, campaignId)` |
+| `board` | Escenas (mapa, cuadrícula, niebla, paredes, imagen), fichas en el tablero y el combate de la escena activa (`combat.ts`: iniciativa y turnos). Los cambios llegan por el socket de la mesa y cada conectado recibe su vista | `boardViewFor`, `broadcastBoard(sql, campaignId)` |
 | `characters` | Personajes del usuario y su ficha validada (`sheet.ts`); el DM y co-DM de la campaña donde juegan los ven en solo lectura | `/api/characters`, `/api/campaigns/:id/characters` |
 | `audit` | Registro de operaciones sensibles | `audit(sql, actor, action, target, data)` |
 

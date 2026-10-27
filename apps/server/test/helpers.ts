@@ -67,6 +67,8 @@ export function as(app: FastifyInstance, who: Client) {
   };
 }
 
+let joins = 0;
+
 /** Campaña con un DM y los jugadores/espectadores pedidos, ya unidos por invitación. */
 export async function campaignWith(app: FastifyInstance, extra: { player?: number; spectator?: number } = {}) {
   const dm = await register(app, "DM");
@@ -76,7 +78,14 @@ export async function campaignWith(app: FastifyInstance, extra: { player?: numbe
     for (let i = 0; i < n; i++) {
       const c = await register(app, `${role}${i}`);
       const { invite } = (await as(app, dm).post(`/api/campaigns/${id}/invites`, { role })).json();
-      await as(app, c).post(`/api/invites/${invite.code}/accept`);
+      // IP propia por aceptación: aceptar invitaciones tiene límite por IP y un archivo de pruebas lo supera.
+      const accepted = await app.inject({
+        method: "POST",
+        url: `/api/invites/${invite.code}/accept`,
+        headers: { origin: ORIGIN, cookie: c.cookie },
+        remoteAddress: `10.0.${(joins >> 8) & 255}.${joins++ & 255}`,
+      });
+      if (accepted.statusCode !== 200) throw new Error(`no se pudo unir a ${role}${i}: ${accepted.body}`);
       out.push(c);
     }
     return out;

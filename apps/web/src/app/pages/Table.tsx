@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TableChat } from "@/app/components/table/TableChat";
 import { TableDice } from "@/app/components/table/TableDice";
 import { TableBoard } from "@/app/components/board/TableBoard";
+import { CombatTracker } from "@/app/components/combat/CombatTracker";
 import { api, type CampaignDetail } from "@/services/api";
 import { useAuth } from "@/services/use-auth";
 import { useI18n, type I18nKey } from "@/services/i18n";
@@ -79,6 +80,17 @@ export default function TablePage() {
           <TableBoard table={table} campaignId={campaignId} />
         </div>
       </Card>
+
+      {table.board?.scene && (table.board.manage || table.board.combat) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("combat.title")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CombatTracker table={table} />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr_220px]">
         <Card>

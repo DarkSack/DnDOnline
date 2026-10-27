@@ -13,7 +13,15 @@ beforeAll(async () => {
 afterAll(closeAll);
 
 type TokenView = { id: string; name: string; col: number; row: number; hp: number | null; visible: boolean; canMove: boolean };
-type Board = { scene: { id: string; fog: string[]; walls: string[]; imageUrl: string | null } | null; tokens: TokenView[]; mask: string[] | null; manage: boolean };
+type Combatant = { tokenId: string; name: string; initiative: number; roll: number | null; bonus: number | null; acted: boolean };
+type Combat = { round: number; current: string | null; combatants: Combatant[]; canAdvance: boolean };
+type Board = {
+  scene: { id: string; fog: string[]; walls: string[]; imageUrl: string | null } | null;
+  tokens: TokenView[];
+  mask: string[] | null;
+  manage: boolean;
+  combat: Combat | null;
+};
 const boardOf = (m: Msg) => m.board as Board;
 const names = (b: Board) => b.tokens.map((t) => t.name).sort();
 
@@ -21,17 +29,19 @@ const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a
 const putImage = (who: Client, sceneId: string, body: Buffer, type = "image/png") =>
   ctx.app.inject({ method: "PUT", url: `/api/scenes/${sceneId}/image`, headers: { origin: ORIGIN, cookie: who.cookie, "content-type": type }, payload: body });
 
+/** Manda un mensaje por ese socket y espera su tablero resultante. */
+const doOn = (sock: Awaited<ReturnType<typeof connectTable>>) => async (msg: object, until: (b: Board) => boolean = () => true) => {
+  const got = sock.next((m) => m.type === "board" && until(boardOf(m)));
+  sock.send(msg);
+  return boardOf(await got);
+};
+
 /** Campaña con escena activa de 10×10, el DM conectado y un jugador con su personaje en la campaña. */
 async function table(extra: { spectator?: number } = {}) {
   const c = await campaignWith(ctx.app, { player: 2, ...extra });
   const { id: sceneId } = (await as(ctx.app, c.dm).post(`/api/campaigns/${c.id}/scenes`, { name: "Cripta", cols: 10, rows: 10 })).json();
   const dm = await connectTable(base, c.id, c.dm);
-  /** Manda un mensaje del DM y espera su tablero resultante. */
-  const dmDo = async (msg: object, until: (b: Board) => boolean = () => true) => {
-    const got = dm.next((m) => m.type === "board" && until(boardOf(m)));
-    dm.send(msg);
-    return boardOf(await got);
-  };
+  const dmDo = doOn(dm);
   await dmDo({ type: "scene.activate", sceneId });
   const player = c.players[0]!;
   const { id: characterId } = (
@@ -171,5 +181,119 @@ describe("tablero", () => {
     const cleared = p.next((m) => m.type === "board" && boardOf(m).scene === null);
     expect((await as(ctx.app, t.dm).delete(`/api/scenes/${t.sceneId}`)).statusCode).toBe(200);
     await cleared;
+  });
+});
+
+describe("combate", () => {
+  /** Mesa con Aria (PC del jugador), un goblin visible y un orco oculto. */
+  async function fight() {
+    const t = await table({ spectator: 1 });
+    await t.dmDo({ type: "token.create", kind: "pc", name: "Aria", col: 0, row: 0, characterId: t.characterId });
+    await t.dmDo({ type: "token.create", kind: "monster", name: "Goblin", col: 1, row: 1 });
+    const b = await t.dmDo({ type: "token.create", kind: "monster", name: "Orco", col: 2, row: 2 });
+    const id = (name: string) => b.tokens.find((x) => x.name === name)!.id;
+    const [aria, goblin, orc] = [id("Aria"), id("Goblin"), id("Orco")];
+    await t.dmDo({ type: "token.update", tokenId: orc, visible: false });
+    // Socket nuevo del DM: el de preparar la mesa ya gastó casi todo su límite de mensajes.
+    const ws = await connectTable(base, t.id, t.dm);
+    const error = (who: typeof ws, msg: object) => {
+      const got = who.next((m) => m.type === "error");
+      who.send(msg);
+      return got;
+    };
+    return { ...t, ws, dmDo: doOn(ws), error, aria, goblin, orc };
+  }
+
+  it("tira la iniciativa en el servidor y el jugador no ve a quien no ve en el tablero", async () => {
+    const t = await fight();
+    const b = await t.dmDo({ type: "combat.start", participants: [{ tokenId: t.aria }, { tokenId: t.goblin }, { tokenId: t.orc, bonus: 3 }] });
+    const c = b.combat!;
+    expect(c.round).toBe(1);
+    expect(c.combatants).toHaveLength(3);
+    expect(c.current).toBe(c.combatants[0]!.tokenId);
+    for (const x of c.combatants) {
+      expect(x.roll).toBeGreaterThanOrEqual(1);
+      expect(x.roll).toBeLessThanOrEqual(20);
+      expect(x.initiative).toBe(x.roll! + x.bonus!);
+    }
+    expect(c.combatants.find((x) => x.tokenId === t.orc)!.bonus).toBe(3);
+    const initiatives = c.combatants.map((x) => x.initiative);
+    expect(initiatives).toEqual([...initiatives].sort((a, z) => z - a));
+
+    const p = await connectTable(base, t.id, t.player);
+    const seen = boardOf(p.hello).combat!;
+    expect(seen.combatants.map((x) => x.name).sort()).toEqual(["Aria", "Goblin"]);
+    expect(seen.combatants.find((x) => x.name === "Goblin")).toMatchObject({ roll: null, bonus: null });
+    expect(seen.combatants.find((x) => x.name === "Aria")!.roll).not.toBeNull();
+    if (c.current === t.orc) expect(seen.current).toBeNull();
+    expect(JSON.stringify(p.inbox)).not.toContain("Orco");
+  });
+
+  it("solo quien dirige maneja el combate; el jugador pasa su turno y nada más", async () => {
+    const t = await fight();
+    let b = await t.dmDo({ type: "combat.start", participants: [{ tokenId: t.aria }, { tokenId: t.goblin }, { tokenId: t.orc }] });
+    const p = await connectTable(base, t.id, t.player);
+    const s = await connectTable(base, t.id, t.spectators[0]!);
+    for (const msg of [
+      { type: "combat.start", participants: [{ tokenId: t.aria }] },
+      { type: "combat.add", participant: { tokenId: t.goblin } },
+      { type: "combat.remove", tokenId: t.goblin },
+      { type: "combat.end" },
+    ]) {
+      expect(await t.error(p, msg)).toEqual({ type: "error", error: "forbidden" });
+    }
+
+    // Avanza hasta que le toque a Aria; antes, el jugador no puede pasar el turno.
+    while (b.combat!.current !== t.aria) {
+      expect(await t.error(p, { type: "combat.next" })).toEqual({ type: "error", error: "forbidden" });
+      b = await t.dmDo({ type: "combat.next" });
+    }
+    const before = b.combat!;
+    expect(await t.error(s, { type: "combat.next" })).toEqual({ type: "error", error: "forbidden" });
+
+    const passed = t.ws.next((m) => m.type === "board" && boardOf(m).combat!.current !== t.aria);
+    p.send({ type: "combat.next" });
+    const after = boardOf(await passed).combat!;
+    const idx = (c: Combat) => c.combatants.findIndex((x) => x.tokenId === c.current);
+    expect(idx(after)).toBe((idx(before) + 1) % 3);
+    expect(after.round).toBe(idx(after) === 0 ? before.round + 1 : before.round);
+    expect(await t.error(p, { type: "combat.next" })).toEqual({ type: "error", error: "forbidden" });
+  });
+
+  it("errores del DM: sin combate, uno ya activo, fichas repetidas o de otra escena", async () => {
+    const t = await fight();
+    expect(await t.error(t.ws, { type: "combat.next" })).toEqual({ type: "error", error: "no_combat" });
+    await t.dmDo({ type: "combat.start", participants: [{ tokenId: t.aria }, { tokenId: t.goblin }] });
+    for (const [msg, error] of [
+      [{ type: "combat.start", participants: [{ tokenId: t.orc }] }, "combat_active"],
+      [{ type: "combat.add", participant: { tokenId: t.aria } }, "invalid_input"],
+      [{ type: "combat.add", participant: { tokenId: crypto.randomUUID() } }, "not_found"],
+      [{ type: "combat.remove", tokenId: t.orc }, "not_found"],
+      [{ type: "combat.next", current: t.orc }, "stale_turn"],
+    ] as const) {
+      expect(await t.error(t.ws, msg)).toEqual({ type: "error", error });
+    }
+  });
+
+  it("añadir, quitar, borrar fichas y cambiar de escena", async () => {
+    const t = await fight();
+    let b = await t.dmDo({ type: "combat.start", participants: [{ tokenId: t.aria }, { tokenId: t.goblin }] });
+    b = await t.dmDo({ type: "combat.add", participant: { tokenId: t.orc } });
+    expect(b.combat!.combatants).toHaveLength(3);
+    b = await t.dmDo({ type: "combat.remove", tokenId: t.orc });
+    expect(b.combat!.combatants.map((x) => x.name).sort()).toEqual(["Aria", "Goblin"]);
+    b = await t.dmDo({ type: "token.delete", tokenId: t.goblin });
+    expect(b.combat!.combatants.map((x) => x.name)).toEqual(["Aria"]);
+    expect(b.combat!.current).toBe(t.aria);
+
+    const { id: other } = (await as(ctx.app, t.dm).post(`/api/campaigns/${t.id}/scenes`, { name: "Bosque" })).json();
+    b = await t.dmDo({ type: "scene.activate", sceneId: other });
+    expect(b.combat).toBeNull();
+    b = await t.dmDo({ type: "scene.activate", sceneId: t.sceneId });
+    expect(b.combat).toBeNull();
+
+    await t.dmDo({ type: "combat.start", participants: [{ tokenId: t.aria }] });
+    b = await t.dmDo({ type: "combat.end" });
+    expect(b.combat).toBeNull();
   });
 });

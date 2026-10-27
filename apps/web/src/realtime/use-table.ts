@@ -39,6 +39,23 @@ export type BoardView = {
   /** Celdas visibles; null = todas. */
   mask: string[] | null;
   manage: boolean;
+  combat: CombatView | null;
+};
+export type CombatantView = {
+  tokenId: string;
+  name: string;
+  initiative: number;
+  /** null en enemigos y NPC para quien no dirige. */
+  roll: number | null;
+  bonus: number | null;
+  acted: boolean;
+};
+export type CombatView = {
+  round: number;
+  /** Ficha a la que le toca; null si no la ves. */
+  current: string | null;
+  combatants: CombatantView[];
+  canAdvance: boolean;
 };
 
 export type Presence = { id: string; displayName: string; role: Role };

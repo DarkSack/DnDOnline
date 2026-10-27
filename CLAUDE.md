@@ -14,7 +14,6 @@
   `package.json` después, porque una vez se perdió el bloque `dependencies`.
 - Los heredocs con comillas en Git Bash fallan a veces: escribir archivos con la herramienta Write.
 - Vista previa: `dndonline-server` y `dndonline-web` en `E:\Dev\.claude\launch.json`.
-- Pantallas antiguas (personajes, salas, tablero, combate) usan el stub de Supabase y solo existen con
-  `VITE_UI_PREVIEW=true`. No añadir código nuevo contra `services/supabase.ts`: migrar al servidor propio.
+- E2E: `npm run e2e` (Playwright, `e2e/`), con su propia API, web y base. En local usa el Edge instalado.
 - `typescript` va fijado a 6.x en la raíz: con la 7 (sin API de JS) typescript-eslint deja de funcionar.
 - Nunca: secretos en el repo, contraseñas o tokens en logs ni en la auditoría, ni contenido de D&D fuera del SRD.

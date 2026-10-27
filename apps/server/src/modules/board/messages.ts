@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Sql } from "../../db/sql.ts";
 import { can, type Role } from "../campaigns/permissions.ts";
+import { applyCombatMessage, combatMessages, dropFromCombat, isCombatMessage } from "./combat.ts";
 
 const MAX_TOKENS = 300;
 const coord = z.number().int().min(0).max(99);
@@ -33,10 +34,11 @@ export const boardMessages = [
     visible: z.boolean().optional(),
   }),
   z.object({ type: z.literal("token.delete"), tokenId: z.uuid() }),
+  ...combatMessages,
 ] as const;
 
 export type BoardMessage = z.infer<(typeof boardMessages)[number]>;
-export const isBoardMessage = (m: { type: string }): m is BoardMessage => m.type.startsWith("scene.") || m.type.startsWith("token.");
+export const isBoardMessage = (m: { type: string }): m is BoardMessage => /^(scene|token|combat)\./.test(m.type);
 
 /**
  * Aplica un mensaje del tablero si quien lo manda puede. Devuelve un código de error o null si hubo cambio.
@@ -50,12 +52,16 @@ export async function applyBoardMessage(sql: Sql, campaignId: string, viewer: { 
       UPDATE campaigns SET active_scene_id = ${msg.sceneId}
       WHERE id = ${campaignId} AND (${msg.sceneId}::uuid IS NULL OR EXISTS (SELECT 1 FROM scenes WHERE id = ${msg.sceneId} AND campaign_id = ${campaignId}))
       RETURNING 1`;
-    return updated.length ? null : "not_found";
+    if (!updated.length) return "not_found";
+    // El combate es de la escena activa: cambiar de escena lo termina.
+    await sql`DELETE FROM combats WHERE campaign_id = ${campaignId} AND scene_id IS DISTINCT FROM ${msg.sceneId}::uuid`;
+    return null;
   }
 
   const [scene] = await sql<{ id: string; cols: number; rows: number }[]>`
     SELECT s.id, s.cols, s.rows FROM campaigns c JOIN scenes s ON s.id = c.active_scene_id WHERE c.id = ${campaignId}`;
   if (!scene) return "no_scene";
+  if (isCombatMessage(msg)) return applyCombatMessage(sql, campaignId, scene.id, viewer, msg);
   const inGrid = (col: number, row: number) => col < scene.cols && row < scene.rows;
 
   if (msg.type === "scene.paint" || msg.type === "scene.clear") {
@@ -102,6 +108,7 @@ export async function applyBoardMessage(sql: Sql, campaignId: string, viewer: { 
   if (msg.type === "token.delete") {
     if (!manage) return "forbidden";
     await sql`DELETE FROM tokens WHERE id = ${msg.tokenId}`;
+    await dropFromCombat(sql, campaignId, msg.tokenId);
     return null;
   }
 

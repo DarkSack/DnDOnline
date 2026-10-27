@@ -1,200 +1,106 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { ChevronRight, Swords, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  nextTurn,
-  removeCombatant,
-  type Combatant,
-  type CombatState,
-} from "@dndonline/engine/combat";
-import { endCombat, saveCombat } from "@/services/combat";
-import { useLiveCombat } from "@/realtime/use-live-combat";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/services/i18n";
+import type { CombatView, Table } from "@/realtime/use-table";
 import { StartCombatPicker } from "./StartCombatPicker";
 
-export type CombatTrackerProps = {
-  roomId: string;
-  isDm: boolean;
-};
-
-export function CombatTracker({ roomId, isDm }: CombatTrackerProps) {
-  const { combat, loading } = useLiveCombat(roomId);
+/** Orden de turnos de la mesa. El servidor tira la iniciativa, decide quién ve qué y quién puede pasar turno. */
+export function CombatTracker({ table }: { table: Table }) {
+  const { t } = useI18n();
+  const { board, send } = table;
   const [picking, setPicking] = useState(false);
-  const [pending, setPending] = useState(false);
-
-  const doNextTurn = useCallback(async () => {
-    if (!combat) return;
-    setPending(true);
-    try {
-      await saveCombat(nextTurn(combat));
-    } finally {
-      setPending(false);
-    }
-  }, [combat]);
-
-  const doEnd = useCallback(async () => {
-    if (!combat) return;
-    setPending(true);
-    try {
-      await endCombat(combat.id);
-    } finally {
-      setPending(false);
-    }
-  }, [combat]);
-
-  const doRemove = useCallback(
-    async (c: Combatant) => {
-      if (!combat) return;
-      setPending(true);
-      try {
-        await saveCombat(removeCombatant(combat, c.entity_id));
-      } finally {
-        setPending(false);
-      }
-    },
-    [combat],
-  );
-
-  if (loading) {
-    return <p className="text-xs text-muted-foreground">Cargando…</p>;
-  }
+  if (!board?.scene) return null;
+  const { combat, manage, tokens } = board;
 
   if (!combat) {
+    if (picking && manage) {
+      return (
+        <StartCombatPicker
+          tokens={tokens}
+          onStart={(participants) => {
+            send({ type: "combat.start", participants });
+            setPicking(false);
+          }}
+          onCancel={() => setPicking(false)}
+        />
+      );
+    }
     return (
-      <div className="flex flex-col gap-2">
-        {picking ? (
-          <StartCombatPicker
-            roomId={roomId}
-            onDone={() => setPicking(false)}
-            onCancel={() => setPicking(false)}
-          />
-        ) : (
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              Sin combate activo.
-            </span>
-            {isDm && (
-              <Button size="sm" onClick={() => setPicking(true)}>
-                <Swords className="mr-1 size-3.5" />
-                Iniciar combate
-              </Button>
-            )}
-          </div>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm text-muted-foreground">{t("combat.none")}</span>
+        {manage && (
+          <Button size="sm" onClick={() => setPicking(true)}>
+            <Swords className="mr-1 size-3.5" />
+            {t("combat.start")}
+          </Button>
         )}
       </div>
     );
   }
 
-  return (
-    <ActiveCombat
-      combat={combat}
-      isDm={isDm}
-      pending={pending}
-      onNext={doNextTurn}
-      onEnd={doEnd}
-      onRemove={doRemove}
-    />
-  );
-}
-
-type ActiveCombatProps = {
-  combat: CombatState;
-  isDm: boolean;
-  pending: boolean;
-  onNext: () => void;
-  onEnd: () => void;
-  onRemove: (c: Combatant) => void;
-};
-
-function ActiveCombat({
-  combat,
-  isDm,
-  pending,
-  onNext,
-  onEnd,
-  onRemove,
-}: ActiveCombatProps) {
+  const outside = manage ? tokens.filter((x) => !combat.combatants.some((c) => c.tokenId === x.id)) : [];
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-sm">
-          <span className="font-medium">Ronda {combat.round}</span>
+          <span className="font-medium">
+            {t("combat.round")} {combat.round}
+          </span>
           <span className="ml-2 text-muted-foreground">
-            · Turno de{" "}
-            <span className="text-foreground">
-              {combat.combatants[combat.current_turn_idx]?.name ?? "—"}
-            </span>
+            · {t("combat.turnOf")} <span className="text-foreground">{currentName(combat) ?? t("combat.hiddenTurn")}</span>
           </span>
         </div>
-        {isDm && (
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              onClick={onNext}
-              disabled={pending || combat.combatants.length === 0}
-            >
+        <div className="flex gap-2">
+          {combat.canAdvance && (
+            <Button size="sm" onClick={() => send({ type: "combat.next", current: combat.current ?? undefined })} disabled={combat.combatants.length === 0}>
               <ChevronRight className="mr-1 size-3.5" />
-              Siguiente turno
+              {t("combat.next")}
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={onEnd}
-              disabled={pending}
-            >
-              Terminar combate
+          )}
+          {manage && (
+            <Button size="sm" variant="outline" onClick={() => send({ type: "combat.end" })}>
+              {t("combat.end")}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
-      <ul className="flex flex-col gap-1">
+      <ol className="flex flex-col gap-1">
         {combat.combatants.map((c, i) => {
-          const isCurrent = i === combat.current_turn_idx;
-          const hasActed = i < combat.current_turn_idx;
+          const isCurrent = c.tokenId === combat.current;
           return (
             <li
-              key={`${c.entity_id}-${c.order_idx}`}
+              key={c.tokenId}
+              aria-current={isCurrent ? "step" : undefined}
               className={cn(
                 "flex items-center justify-between rounded-md border px-3 py-2 text-sm",
-                isCurrent
-                  ? "border-primary bg-primary/10"
-                  : hasActed
-                    ? "border-border bg-input/10 text-muted-foreground"
-                    : "border-border bg-input/20",
+                isCurrent ? "border-primary bg-primary/10" : c.acted ? "border-border bg-input/10 text-muted-foreground" : "border-border bg-input/20",
               )}
             >
-              <div className="flex items-center gap-2 min-w-0">
-                {isCurrent && (
-                  <ChevronRight className="size-3.5 text-primary" />
-                )}
-                <span className="w-5 text-right font-mono text-xs text-muted-foreground">
-                  {i + 1}.
-                </span>
+              <div className="flex min-w-0 items-center gap-2">
+                {isCurrent && <ChevronRight className="size-3.5 text-primary" />}
+                <span className="w-5 text-right font-mono text-xs text-muted-foreground">{i + 1}.</span>
                 <span className="truncate">{c.name}</span>
               </div>
               <div className="flex items-center gap-3 text-xs">
                 <span className="font-mono">
                   <span className="text-muted-foreground">init</span>{" "}
-                  <span
-                    className={cn(
-                      "text-foreground",
-                      isCurrent && "text-primary",
-                    )}
-                  >
-                    {c.initiative}
-                  </span>
-                  <span className="ml-1 text-muted-foreground">
-                    (d20:{c.roll}
-                    {c.bonus >= 0 ? `+${c.bonus}` : c.bonus})
-                  </span>
+                  <span className={cn("text-foreground", isCurrent && "text-primary")}>{c.initiative}</span>
+                  {c.roll !== null && c.bonus !== null && (
+                    <span className="ml-1 text-muted-foreground">
+                      (d20:{c.roll}
+                      {c.bonus >= 0 ? `+${c.bonus}` : c.bonus})
+                    </span>
+                  )}
                 </span>
-                {isDm && (
+                {manage && (
                   <button
                     type="button"
-                    onClick={() => onRemove(c)}
+                    onClick={() => send({ type: "combat.remove", tokenId: c.tokenId })}
                     className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-destructive"
-                    aria-label="Quitar del combate"
+                    aria-label={`${t("combat.remove")}: ${c.name}`}
                   >
                     <X className="size-3.5" />
                   </button>
@@ -204,11 +110,27 @@ function ActiveCombat({
           );
         })}
         {combat.combatants.length === 0 && (
-          <li className="rounded-md border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">
-            Sin combatientes. Termina el combate.
-          </li>
+          <li className="rounded-md border border-dashed border-border px-3 py-4 text-center text-xs text-muted-foreground">{t("combat.empty")}</li>
         )}
-      </ul>
+      </ol>
+
+      {outside.length > 0 && (
+        <select
+          value=""
+          onChange={(e) => e.target.value && send({ type: "combat.add", participant: { tokenId: e.target.value } })}
+          className="h-8 rounded-md border border-border bg-input/30 px-2 text-xs"
+          aria-label={t("combat.addPick")}
+        >
+          <option value="">{t("combat.addPick")}</option>
+          {outside.map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.name}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
   );
 }
+
+const currentName = (c: CombatView) => c.combatants.find((x) => x.tokenId === c.current)?.name ?? null;

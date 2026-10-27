@@ -30,3 +30,7 @@ dist-ssr
 
 # Entornos locales
 *.viejo
+
+# Playwright
+test-results
+playwright-report

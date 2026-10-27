@@ -1,92 +1,45 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { BoardEntity } from "@dndonline/engine/board";
-import { listEntities } from "@/services/entities";
-import { startCombat } from "@/services/combat";
+import { useI18n } from "@/services/i18n";
+import type { TokenView } from "@/realtime/use-table";
 
-export type StartCombatPickerProps = {
-  roomId: string;
-  onDone: () => void;
-  onCancel: () => void;
-};
+export type Participant = { tokenId: string; bonus?: number };
 
-type Picked = {
-  entity: BoardEntity;
-  checked: boolean;
-  bonus: number;
-};
+type Picked = { token: TokenView; checked: boolean; bonus: string };
 
+/** Elige qué fichas del tablero entran al combate. La iniciativa la tira el servidor. */
 export function StartCombatPicker({
-  roomId,
-  onDone,
+  tokens,
+  onStart,
   onCancel,
-}: StartCombatPickerProps) {
-  const [items, setItems] = useState<Picked[] | null>(null);
-  const [pending, setPending] = useState(false);
+}: {
+  tokens: TokenView[];
+  onStart: (participants: Participant[]) => void;
+  onCancel: () => void;
+}) {
+  const { t } = useI18n();
+  const [items, setItems] = useState<Picked[]>(() => tokens.filter((x) => x.visible).map((token) => ({ token, checked: true, bonus: "" })));
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let alive = true;
-    listEntities(roomId)
-      .then((list) => {
-        if (!alive) return;
-        setItems(
-          list
-            .filter((e) => e.visible)
-            .map((entity) => ({ entity, checked: true, bonus: 0 })),
-        );
-      })
-      .catch((e) => {
-        if (alive) setError(e instanceof Error ? e.message : String(e));
-      });
-    return () => {
-      alive = false;
-    };
-  }, [roomId]);
+  const patch = (id: string, p: Partial<Picked>) => setItems((prev) => prev.map((x) => (x.token.id === id ? { ...x, ...p } : x)));
 
-  const toggle = (id: string, patch: Partial<Picked>) => {
-    setItems((prev) =>
-      prev
-        ? prev.map((p) => (p.entity.id === id ? { ...p, ...patch } : p))
-        : prev,
-    );
-  };
-
-  const submit = async () => {
-    if (!items) return;
+  const submit = () => {
     const participants = items
-      .filter((p) => p.checked)
-      .map((p) => ({
-        entity_id: p.entity.id,
-        name: p.entity.name,
-        bonus: Number.isFinite(p.bonus) ? p.bonus : 0,
-      }));
-    if (participants.length === 0) {
-      setError("Selecciona al menos un combatiente");
-      return;
-    }
-    setPending(true);
-    setError(null);
-    try {
-      await startCombat({ roomId, participants });
-      onDone();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "No se pudo iniciar");
-      setPending(false);
-    }
+      .filter((x) => x.checked)
+      .map((x) => {
+        const bonus = Number.parseInt(x.bonus, 10);
+        return Number.isFinite(bonus) ? { tokenId: x.token.id, bonus } : { tokenId: x.token.id };
+      });
+    if (participants.length === 0) return setError(t("combat.pickOne"));
+    onStart(participants);
   };
 
-  if (!items) {
-    return <p className="text-sm text-muted-foreground">Cargando entidades…</p>;
-  }
   if (items.length === 0) {
     return (
       <div className="flex flex-col gap-2 text-sm">
-        <p className="text-muted-foreground">
-          No hay entidades visibles en el tablero. Colócalas primero.
-        </p>
+        <p className="text-muted-foreground">{t("combat.noTokens")}</p>
         <Button variant="ghost" size="sm" onClick={onCancel}>
-          Cancelar
+          {t("common.cancel")}
         </Button>
       </div>
     );
@@ -94,42 +47,31 @@ export function StartCombatPicker({
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-xs text-muted-foreground">
-        Iniciativa se rollea server-side: 1d20 + bonus por combatiente.
-      </p>
+      <p className="text-xs text-muted-foreground">{t("combat.rollHelp")}</p>
       <ul className="flex max-h-64 flex-col gap-1 overflow-y-auto pr-1">
-        {items.map((p) => (
-          <li
-            key={p.entity.id}
-            className="flex items-center gap-2 rounded-md border border-border bg-input/20 px-2 py-1.5 text-sm"
-          >
+        {items.map((x) => (
+          <li key={x.token.id} className="flex items-center gap-2 rounded-md border border-border bg-input/20 px-2 py-1.5 text-sm">
             <input
               type="checkbox"
-              checked={p.checked}
-              onChange={(e) =>
-                toggle(p.entity.id, { checked: e.target.checked })
-              }
+              checked={x.checked}
+              onChange={(e) => patch(x.token.id, { checked: e.target.checked })}
               className="size-4"
+              aria-label={x.token.name}
             />
             <span className="flex-1 truncate">
-              {p.entity.name}
-              <span className="ml-2 text-[10px] text-muted-foreground">
-                {p.entity.kind === "pc"
-                  ? "PC"
-                  : p.entity.kind === "npc"
-                    ? "NPC"
-                    : "Enemigo"}
-              </span>
+              {x.token.name}
+              <span className="ml-2 text-[10px] text-muted-foreground">{t(`kind.${x.token.kind}`)}</span>
             </span>
             <label className="flex items-center gap-1 text-xs text-muted-foreground">
-              bonus
+              {t("combat.bonus")}
               <input
                 type="number"
-                value={p.bonus}
-                disabled={!p.checked}
-                onChange={(e) =>
-                  toggle(p.entity.id, { bonus: Number(e.target.value) })
-                }
+                min={-20}
+                max={20}
+                value={x.bonus}
+                placeholder={x.token.kind === "pc" ? "auto" : "0"}
+                disabled={!x.checked}
+                onChange={(e) => patch(x.token.id, { bonus: e.target.value })}
                 className="w-14 rounded border border-border bg-input/30 px-1.5 py-0.5 text-right font-mono text-xs"
               />
             </label>
@@ -138,11 +80,11 @@ export function StartCombatPicker({
       </ul>
       {error && <p className="text-xs text-destructive">{error}</p>}
       <div className="flex items-center justify-between">
-        <Button variant="ghost" size="sm" onClick={onCancel} disabled={pending}>
-          Cancelar
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          {t("common.cancel")}
         </Button>
-        <Button onClick={submit} disabled={pending} size="sm">
-          {pending ? "Iniciando…" : "Iniciar combate"}
+        <Button onClick={submit} size="sm">
+          {t("combat.start")}
         </Button>
       </div>
     </div>

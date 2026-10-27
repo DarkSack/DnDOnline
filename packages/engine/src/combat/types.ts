@@ -1,4 +1,4 @@
-// Engine: combate. Puro TS, sin React ni Supabase.
+// Engine: combate. Puro TS, sin React ni red.
 
 export type Combatant = {
   entity_id: string;
@@ -12,14 +12,10 @@ export type Combatant = {
   order_idx: number;
 };
 
+/** Estado del combate en curso; dónde se guarda lo decide quien lo usa. */
 export type CombatState = {
-  id: string;
-  room_id: string;
-  active: boolean;
   round: number;
   /** Índice dentro del array (posición ordenada), no order_idx. */
   current_turn_idx: number;
   combatants: Combatant[];
-  created_at: string;
-  ended_at: string | null;
 };

@@ -1,4 +1,4 @@
-// Engine: dados. Puro TS, sin React ni Supabase — testeable en Node
+// Engine: dados. Puro TS, sin React ni red, testeable en Node
 // y ejecutable server-side dentro de una Edge Function si en el futuro
 // queremos validar allí.
 

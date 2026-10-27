@@ -20,14 +20,9 @@ const mk = (partial: Partial<Combatant> & { name: string }): Combatant => ({
 });
 
 const mkState = (combatants: Combatant[]): CombatState => ({
-  id: "c1",
-  room_id: "r1",
-  active: true,
   round: 1,
   current_turn_idx: 0,
   combatants,
-  created_at: new Date().toISOString(),
-  ended_at: null,
 });
 
 describe("sortCombatants", () => {

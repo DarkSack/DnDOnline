@@ -23,6 +23,7 @@ npm install && cp .env.example .env && npm run db:up
 npm run dev:server   # :3000
 npm run dev:web      # http://localhost:5180
 npm test             # motor + servidor (necesita el Postgres de db:up)
+npm run e2e          # Playwright: dos navegadores del registro al combate
 ```
 
 ## Licencia
