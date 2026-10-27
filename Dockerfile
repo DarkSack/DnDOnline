@@ -11,10 +11,19 @@ FROM deps AS build
 COPY . .
 RUN npm run build -w @dndonline/web
 
+# Solo lo que el servidor necesita en ejecución: sin Vite, Playwright ni TypeScript.
+FROM node:24-alpine AS server-deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY packages/engine/package.json packages/engine/
+COPY apps/server/package.json apps/server/
+COPY apps/web/package.json apps/web/
+RUN npm ci --omit=dev -w @dndonline/server
+
 FROM node:24-alpine AS server
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
-COPY --from=deps /app/node_modules node_modules
+COPY --from=server-deps /app/node_modules node_modules
 COPY package.json ./
 COPY packages/engine packages/engine
 COPY apps/server apps/server

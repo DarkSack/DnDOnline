@@ -1,4 +1,6 @@
 import { Application, extend } from "@pixi/react";
+// La CSP de producción (deploy/Caddyfile) no permite eval: Pixi necesita sus shaders sin él.
+import "pixi.js/unsafe-eval";
 import {
   Container,
   Graphics,

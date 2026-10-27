@@ -5,6 +5,7 @@ import { HttpError, parse } from "../../http.ts";
 import { audit } from "../audit.ts";
 import { authorize, can, roleIn } from "../campaigns/permissions.ts";
 import { requireUser } from "../identity/routes.ts";
+import { broadcastBoard } from "../table/routes.ts";
 import { CharacterName, Sheet } from "./sheet.ts";
 
 const Id = z.object({ id: z.uuid() });
@@ -61,7 +62,7 @@ export async function characterRoutes(app: FastifyInstance, { sql }: { sql: Sql 
     return { character: row, canEdit: owner };
   });
 
-  // shortcut: solo el dueño edita; los cambios de PG en partida llegarán con el combate (PLAN 1.10).
+  // Solo el dueño edita. Los PG también cambian desde la mesa (token.update en modules/board/messages.ts).
   app.patch("/api/characters/:id", async (req) => {
     const user = requireUser(req);
     const { id } = parse(Id, req.params);
@@ -76,6 +77,14 @@ export async function characterRoutes(app: FastifyInstance, { sql }: { sql: Sql 
         campaign_id = ${body.campaignId === undefined ? sql`campaign_id` : body.campaignId},
         updated_at = now()
       WHERE id = ${id}`;
+    if (body.sheet) {
+      // Sus fichas en el tablero toman los PG nuevos; quien tenga la mesa abierta lo ve al momento.
+      const moved = await sql<{ campaignId: string }[]>`
+        UPDATE tokens t SET hp = ${body.sheet.combat.hp}, hp_max = ${body.sheet.combat.hpMax}
+        FROM scenes s WHERE s.id = t.scene_id AND t.character_id = ${id}
+        RETURNING s.campaign_id AS "campaignId"`;
+      for (const campaignId of new Set(moved.map((r) => r.campaignId))) await broadcastBoard(sql, campaignId);
+    }
     return { ok: true };
   });
 

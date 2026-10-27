@@ -3,7 +3,9 @@ import { defineConfig } from "@playwright/test";
 // API y web propias en otros puertos y con su propia base: no tocan las de desarrollo.
 const API_PORT = 3100;
 const WEB_PORT = 5190;
-const ORIGIN = `http://localhost:${WEB_PORT}`;
+// E2E_BASE_URL: probar una instancia ya levantada (p. ej. la pila de producción con Caddy) en vez de levantar una.
+const EXTERNAL = process.env.E2E_BASE_URL;
+const ORIGIN = EXTERNAL ?? `http://localhost:${WEB_PORT}`;
 
 export default defineConfig({
   testDir: "e2e",
@@ -19,7 +21,7 @@ export default defineConfig({
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
-  webServer: [
+  webServer: EXTERNAL ? undefined : [
     {
       command: "node e2e/reset-db.mjs && npm run start -w @dndonline/server",
       url: `http://127.0.0.1:${API_PORT}/api/health`,

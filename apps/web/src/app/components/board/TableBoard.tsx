@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { listCampaignCharacters, type CharacterSummary } from "@/services/characters";
 import { listScenes, type SceneSummary } from "@/services/scenes";
-import { useI18n } from "@/services/i18n";
+import { labelOf, useI18n } from "@/services/i18n";
 import type { BoardView, Table, TokenView } from "@/realtime/use-table";
 import { BoardCanvas } from "./BoardCanvas";
 import { CreatureCatalog } from "./CreatureCatalog";
@@ -180,7 +180,7 @@ export function TableBoard({ table, campaignId }: { table: Table; campaignId: st
             spawnMode={!!armed}
             onSpawnAt={(pos) => {
               if (!armed) return;
-              send({ type: "token.create", kind: armed.kind, name: armed.name, size: armed.size, hp: armed.hp, color: armed.color, col: pos.col, row: pos.row });
+              send({ type: "token.create", kind: armed.kind, name: labelOf(t, "creature", armed.slug), size: armed.size, hp: armed.hp, color: armed.color, col: pos.col, row: pos.row });
               setArmed(null);
             }}
             backgroundUrl={scene.imageUrl}

@@ -1,8 +1,18 @@
-import type { CharacterSheet } from "@dndonline/engine/character";
+import { ABILITIES, SKILLS, type Ability, type CharacterSheet, type Skill } from "@dndonline/engine/character";
 import { z } from "zod";
 
 const text = (max: number) => z.string().trim().max(max);
 const score = z.number().int().min(1).max(30);
+
+const ability = z.enum(ABILITIES as [Ability, ...Ability[]]);
+const skill = z.enum(SKILLS as [Skill, ...Skill[]]);
+const unique = <T>(list: T[]) => new Set(list).size === list.length;
+
+// Sin repetidos, y pericia solo en habilidades con competencia.
+const proficiencies = z
+  .object({ saves: z.array(ability).max(6), skills: z.array(skill).max(18), expertise: z.array(skill).max(18).optional() })
+  .refine((p) => unique(p.saves) && unique(p.skills) && unique(p.expertise ?? []))
+  .refine((p) => (p.expertise ?? []).every((s) => p.skills.includes(s)));
 
 // Solo https: la imagen la carga el navegador de quien mira la ficha (DM incluido).
 const avatarUrl = z.union([z.literal(""), z.url({ protocol: /^https$/ }).max(500)]);
@@ -41,6 +51,7 @@ export const Sheet = z.object({
       initiativeBonus: z.number().int().min(-20).max(20).optional(),
     })
     .refine((c) => c.hp <= c.hpMax),
+  proficiencies: proficiencies.optional(),
   story: z.object({
     backstory: text(4000).optional(),
     description: text(4000).optional(),

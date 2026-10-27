@@ -28,6 +28,7 @@ export function emptyCharacterSheet(): CharacterSheet {
       ac: 10,
       speed: 30,
     },
+    proficiencies: { saves: [], skills: [], expertise: [] },
     story: {
       backstory: "",
       description: "",

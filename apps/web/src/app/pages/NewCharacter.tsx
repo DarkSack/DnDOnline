@@ -6,15 +6,15 @@ import { createCharacter } from "@/services/characters";
 import { useI18n } from "@/services/i18n";
 import { emptyCharacterSheet, type CharacterSheet } from "@dndonline/engine/character";
 import { StepIndicator } from "@/app/components/character/StepIndicator";
+import { CHARACTER_STEPS } from "@/app/components/character/characterSteps";
 import { IdentityStep } from "@/app/components/character/steps/IdentityStep";
 import { AbilitiesStep } from "@/app/components/character/steps/AbilitiesStep";
 import { CombatStep } from "@/app/components/character/steps/CombatStep";
 import { StoryStep } from "@/app/components/character/steps/StoryStep";
 
-const STEPS = ["Identidad", "Atributos", "Combate", "Historia"] as const;
-
 export default function NewCharacterPage() {
-  const { tError } = useI18n();
+  const { t, tError } = useI18n();
+  const steps = CHARACTER_STEPS.map(t);
   const navigate = useNavigate();
   // Desde la página de una campaña: el personaje nace ya vinculado a ella.
   const campaignId = useSearchParams()[0].get("campaign");
@@ -28,12 +28,12 @@ export default function NewCharacterPage() {
 
   const identityValid = name.trim().length > 0;
   const canAdvance = step === 0 ? identityValid : true;
-  const isLast = step === STEPS.length - 1;
+  const isLast = step === steps.length - 1;
 
   const onNext = (e: FormEvent) => {
     e.preventDefault();
     if (!canAdvance) return;
-    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    setStep((s) => Math.min(s + 1, steps.length - 1));
   };
 
   const onBack = () => setStep((s) => Math.max(0, s - 1));
@@ -62,17 +62,17 @@ export default function NewCharacterPage() {
         to={campaignId ? `/campaigns/${campaignId}` : "/dashboard"}
         className="text-xs text-muted-foreground hover:underline"
       >
-        ← Volver
+        {t("common.back")}
       </Link>
 
       <div className="flex flex-col gap-2">
-        <h1 className="font-heading text-2xl">Nuevo personaje</h1>
-        <StepIndicator steps={STEPS} current={step} onGoTo={setStep} />
+        <h1 className="font-heading text-2xl">{t("char.new")}</h1>
+        <StepIndicator steps={steps} current={step} onGoTo={setStep} />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{STEPS[step]}</CardTitle>
+          <CardTitle>{steps[step]}</CardTitle>
         </CardHeader>
         <CardContent>
           <form
@@ -93,15 +93,7 @@ export default function NewCharacterPage() {
               />
             )}
             {step === 1 && (
-              <AbilitiesStep
-                abilities={sheet.abilities}
-                onChange={(patch) =>
-                  setSheet((s) => ({
-                    ...s,
-                    abilities: { ...s.abilities, ...patch },
-                  }))
-                }
-              />
+              <AbilitiesStep sheet={sheet} onChange={setSheet} />
             )}
             {step === 2 && (
               <CombatStep
@@ -139,15 +131,15 @@ export default function NewCharacterPage() {
                 onClick={onBack}
                 disabled={step === 0 || pending}
               >
-                Atrás
+                {t("common.prev")}
               </Button>
               {isLast ? (
                 <Button type="submit" disabled={pending || !identityValid}>
-                  {pending ? "Guardando…" : "Crear personaje"}
+                  {pending ? t("common.saving") : t("char.create")}
                 </Button>
               ) : (
                 <Button type="submit" disabled={!canAdvance}>
-                  Siguiente
+                  {t("common.next")}
                 </Button>
               )}
             </div>

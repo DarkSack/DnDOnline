@@ -1,4 +1,4 @@
-import type { Ability, Alignment } from "./types";
+import type { Ability, Alignment, Skill } from "./types";
 
 export const RACES = [
   "Humano",
@@ -26,7 +26,6 @@ export const CLASSES = [
   "Hechicero",
   "Brujo",
   "Mago",
-  "Artificiero",
   "Otro",
 ] as const;
 
@@ -42,23 +41,29 @@ export const ALIGNMENTS: { value: Alignment; label: string }[] = [
   { value: "chaotic-evil", label: "Caótico malvado" },
 ];
 
-export const ABILITY_LABELS: Record<Ability, string> = {
-  str: "Fuerza",
-  dex: "Destreza",
-  con: "Constitución",
-  int: "Inteligencia",
-  wis: "Sabiduría",
-  cha: "Carisma",
+/** Característica de cada habilidad (SRD 5.2.1). El orden es el de la ficha. */
+export const SKILL_ABILITY: Readonly<Record<Skill, Ability>> = {
+  acrobatics: "dex",
+  "animal-handling": "wis",
+  arcana: "int",
+  athletics: "str",
+  deception: "cha",
+  history: "int",
+  insight: "wis",
+  intimidation: "cha",
+  investigation: "int",
+  medicine: "wis",
+  nature: "int",
+  perception: "wis",
+  performance: "cha",
+  persuasion: "cha",
+  religion: "int",
+  "sleight-of-hand": "dex",
+  stealth: "dex",
+  survival: "wis",
 };
 
-export const ABILITY_SHORT: Record<Ability, string> = {
-  str: "FUE",
-  dex: "DES",
-  con: "CON",
-  int: "INT",
-  wis: "SAB",
-  cha: "CAR",
-};
+export const SKILLS = Object.keys(SKILL_ABILITY) as Skill[];
 
 /** Standard Array de D&D 5e — clásico y balanceado. */
 export const STANDARD_ARRAY: readonly number[] = [15, 14, 13, 12, 10, 8] as const;

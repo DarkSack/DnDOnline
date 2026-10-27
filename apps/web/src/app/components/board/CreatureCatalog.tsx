@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { CREATURE_CATALOG, type CreatureTemplate } from "@dndonline/engine/board";
 import { cn } from "@/lib/utils";
 import type { CharacterSummary } from "@/services/characters";
+import { labelOf, useI18n } from "@/services/i18n";
 
 export type CreatureCatalogProps = {
   armed: CreatureTemplate | null;
@@ -23,6 +24,7 @@ export function CreatureCatalog({
   onSpawnPc,
   pcs = [],
 }: CreatureCatalogProps) {
+  const { t } = useI18n();
   // Escape cancela el arm.
   useEffect(() => {
     if (!armed) return;
@@ -36,24 +38,18 @@ export function CreatureCatalog({
   return (
     <div className="flex flex-col gap-3 rounded-md border border-border bg-background/40 p-3">
       <div className="flex items-center justify-between text-xs">
-        <span className="font-medium text-muted-foreground">
-          Catálogo (DM)
-        </span>
-        {armed && (
-          <span className="text-primary">
-            Click en el tablero para colocar · Esc para cancelar
-          </span>
-        )}
+        <span className="font-medium text-muted-foreground">{t("board.catalog")}</span>
+        {armed && <span className="text-primary">{t("board.placeHint")}</span>}
       </div>
 
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
-        {CREATURE_CATALOG.map((t) => {
-          const active = armed?.slug === t.slug;
+        {CREATURE_CATALOG.map((c) => {
+          const active = armed?.slug === c.slug;
           return (
             <button
-              key={t.slug}
+              key={c.slug}
               type="button"
-              onClick={() => onArm(active ? null : t)}
+              onClick={() => onArm(active ? null : c)}
               className={cn(
                 "flex flex-col items-center gap-1 rounded-md border p-2 text-xs transition-colors",
                 active
@@ -61,15 +57,11 @@ export function CreatureCatalog({
                   : "border-border bg-input/20 text-muted-foreground hover:bg-input/40 hover:text-foreground",
               )}
             >
-              <span className="text-lg leading-none">{t.glyph ?? "•"}</span>
-              <span className="text-center font-medium">{t.name}</span>
+              <span className="text-lg leading-none">{c.glyph ?? "•"}</span>
+              <span className="text-center font-medium">{labelOf(t, "creature", c.slug)}</span>
               <span className="text-[10px] opacity-60">
-                {t.kind === "monster"
-                  ? "Enemigo"
-                  : t.kind === "npc"
-                    ? "NPC"
-                    : "PC"}
-                {t.size > 1 ? ` · ${t.size}×` : ""} · {t.hp} HP
+                {t(`kind.${c.kind}`)}
+                {c.size > 1 ? ` · ${c.size}×` : ""} · {c.hp} {t("char.hp")}
               </span>
             </button>
           );
@@ -78,9 +70,7 @@ export function CreatureCatalog({
 
       {pcs.length > 0 && onSpawnPc && (
         <div className="flex flex-col gap-2 border-t border-border pt-3">
-          <span className="text-xs font-medium text-muted-foreground">
-            Personajes de la campaña
-          </span>
+          <span className="text-xs font-medium text-muted-foreground">{t("board.campaignPcs")}</span>
           <div className="flex flex-wrap gap-2">
             {pcs.map((pc) => (
               <button

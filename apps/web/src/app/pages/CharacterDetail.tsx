@@ -9,28 +9,29 @@ import {
   updateCharacter,
   type Character,
 } from "@/services/characters";
-import { useI18n } from "@/services/i18n";
+import { labelOf, useI18n, type I18nKey } from "@/services/i18n";
 import {
   ABILITIES,
-  ABILITY_LABELS,
-  ABILITY_SHORT,
-  ALIGNMENTS,
   abilityModifier,
   formatModifier,
   initiativeBonus,
+  passivePerception,
   proficiencyBonus,
+  savingThrowBonus,
+  SKILLS,
+  skillBonus,
 } from "@dndonline/engine/character";
 import { StepIndicator } from "@/app/components/character/StepIndicator";
+import { CHARACTER_STEPS } from "@/app/components/character/characterSteps";
 import { IdentityStep } from "@/app/components/character/steps/IdentityStep";
 import { AbilitiesStep } from "@/app/components/character/steps/AbilitiesStep";
 import { CombatStep } from "@/app/components/character/steps/CombatStep";
 import { StoryStep } from "@/app/components/character/steps/StoryStep";
 
-const STEPS = ["Identidad", "Atributos", "Combate", "Historia"] as const;
-
 export default function CharacterDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { tError } = useI18n();
+  const { t, tError } = useI18n();
+  const steps = CHARACTER_STEPS.map(t);
   const navigate = useNavigate();
   const [character, setCharacter] = useState<Character | null>(null);
   const [isOwner, setIsOwner] = useState(false);
@@ -93,26 +94,24 @@ export default function CharacterDetailPage() {
 
   const onDelete = async () => {
     if (!id) return;
-    if (!confirm("¿Eliminar este personaje? Esta acción no se puede deshacer."))
+    if (!confirm(t("char.deleteConfirm")))
       return;
     await deleteCharacter(id);
     navigate("/dashboard", { replace: true });
   };
 
   if (loading) {
-    return <p className="p-6 text-sm text-muted-foreground">Cargando…</p>;
+    return <p className="p-6 text-sm text-muted-foreground">{t("common.loading")}</p>;
   }
   if (notFound || !character) {
     return (
       <div className="p-6">
-        <p className="text-sm text-muted-foreground">
-          Personaje no encontrado.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("char.notFound")}</p>
         <Link
           to="/dashboard"
           className="mt-2 inline-block text-xs text-primary hover:underline"
         >
-          ← Volver
+          {t("common.back")}
         </Link>
       </div>
     );
@@ -126,15 +125,17 @@ export default function CharacterDetailPage() {
           onClick={cancelEdit}
           className="text-left text-xs text-muted-foreground hover:underline"
         >
-          ← Cancelar edición
+          {t("char.cancelEdit")}
         </button>
         <div className="flex flex-col gap-2">
-          <h1 className="font-heading text-2xl">Editar {draft.name}</h1>
-          <StepIndicator steps={STEPS} current={step} onGoTo={setStep} />
+          <h1 className="font-heading text-2xl">
+            {t("common.edit")} {draft.name}
+          </h1>
+          <StepIndicator steps={steps} current={step} onGoTo={setStep} />
         </div>
         <Card>
           <CardHeader>
-            <CardTitle>{STEPS[step]}</CardTitle>
+            <CardTitle>{steps[step]}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-6">
@@ -155,18 +156,7 @@ export default function CharacterDetailPage() {
                 />
               )}
               {step === 1 && (
-                <AbilitiesStep
-                  abilities={draft.sheet.abilities}
-                  onChange={(patch) =>
-                    setDraft({
-                      ...draft,
-                      sheet: {
-                        ...draft.sheet,
-                        abilities: { ...draft.sheet.abilities, ...patch },
-                      },
-                    })
-                  }
-                />
+                <AbilitiesStep sheet={draft.sheet} onChange={(sheet) => setDraft({ ...draft, sheet })} />
               )}
               {step === 2 && (
                 <CombatStep
@@ -209,16 +199,16 @@ export default function CharacterDetailPage() {
                     onClick={() => setStep(Math.max(0, step - 1))}
                     disabled={step === 0 || saving}
                   >
-                    Atrás
+                    {t("common.prev")}
                   </Button>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={() => setStep(Math.min(STEPS.length - 1, step + 1))}
-                    disabled={step === STEPS.length - 1 || saving}
+                    onClick={() => setStep(Math.min(steps.length - 1, step + 1))}
+                    disabled={step === steps.length - 1 || saving}
                   >
-                    Siguiente
+                    {t("common.next")}
                   </Button>
                 </div>
                 <Button
@@ -226,7 +216,7 @@ export default function CharacterDetailPage() {
                   onClick={save}
                   disabled={saving || draft.name.trim().length === 0}
                 >
-                  {saving ? "Guardando…" : "Guardar cambios"}
+                  {saving ? t("common.saving") : t("char.save")}
                 </Button>
               </div>
             </div>
@@ -237,8 +227,7 @@ export default function CharacterDetailPage() {
   }
 
   const { sheet } = character;
-  const alignmentLabel =
-    ALIGNMENTS.find((a) => a.value === sheet.identity.alignment)?.label ?? "—";
+  const alignmentLabel = sheet.identity.alignment ? t(`alignment.${sheet.identity.alignment}`) : "—";
 
   return (
     <div className="mx-auto flex min-h-svh max-w-3xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
@@ -246,7 +235,7 @@ export default function CharacterDetailPage() {
         to={!isOwner && character.campaignId ? `/campaigns/${character.campaignId}` : "/dashboard"}
         className="text-xs text-muted-foreground hover:underline"
       >
-        ← Volver
+        {t("common.back")}
       </Link>
 
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -265,9 +254,8 @@ export default function CharacterDetailPage() {
           <div>
             <h1 className="font-heading text-2xl">{character.name}</h1>
             <p className="text-xs text-muted-foreground">
-              {sheet.identity.race} · {sheet.identity.className}
-              {sheet.identity.subclass ? ` (${sheet.identity.subclass})` : ""} ·
-              Nivel {sheet.identity.level}
+              {labelOf(t, "race", sheet.identity.race)} · {labelOf(t, "class", sheet.identity.className)}
+              {sheet.identity.subclass ? ` (${sheet.identity.subclass})` : ""} · {t("char.levelLong")} {sheet.identity.level}
             </p>
             {isOwner ? (
               <CampaignPicker
@@ -279,7 +267,7 @@ export default function CharacterDetailPage() {
               />
             ) : (
               <p className="text-xs text-muted-foreground">
-                De {character.ownerName}
+                {t("char.by")} {character.ownerName}
                 {character.campaignName ? ` · ${character.campaignName}` : ""}
               </p>
             )}
@@ -288,10 +276,10 @@ export default function CharacterDetailPage() {
         {isOwner && (
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={startEdit}>
-              Editar
+              {t("common.edit")}
             </Button>
             <Button variant="destructive" size="sm" onClick={onDelete}>
-              Eliminar
+              {t("common.delete")}
             </Button>
           </div>
         )}
@@ -300,38 +288,38 @@ export default function CharacterDetailPage() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Combate</CardTitle>
+            <CardTitle>{t("char.step.combat")}</CardTitle>
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-3 gap-3 text-center text-sm">
               <div>
-                <dt className="text-xs text-muted-foreground">HP</dt>
+                <dt className="text-xs text-muted-foreground">{t("char.hp")}</dt>
                 <dd className="font-mono text-lg">
                   {sheet.combat.hp}/{sheet.combat.hpMax}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">CA</dt>
+                <dt className="text-xs text-muted-foreground">{t("char.ac")}</dt>
                 <dd className="font-mono text-lg">{sheet.combat.ac}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">VEL</dt>
+                <dt className="text-xs text-muted-foreground">{t("char.speed")}</dt>
                 <dd className="font-mono text-lg">{sheet.combat.speed}</dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">Iniciativa</dt>
+                <dt className="text-xs text-muted-foreground">{t("char.initiative")}</dt>
                 <dd className="font-mono text-lg">
                   {formatModifier(initiativeBonus(sheet))}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">Competencia</dt>
+                <dt className="text-xs text-muted-foreground">{t("char.proficiencyBonus")}</dt>
                 <dd className="font-mono text-lg">
                   {formatModifier(proficiencyBonus(sheet.identity.level))}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-muted-foreground">Alineamiento</dt>
+                <dt className="text-xs text-muted-foreground">{t("char.alignment")}</dt>
                 <dd className="text-xs">{alignmentLabel}</dd>
               </div>
             </dl>
@@ -340,7 +328,7 @@ export default function CharacterDetailPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Atributos</CardTitle>
+            <CardTitle>{t("char.step.abilities")}</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="grid grid-cols-3 gap-2 text-center">
@@ -352,7 +340,7 @@ export default function CharacterDetailPage() {
                     className="frame-vellum rounded-md border border-border bg-card p-2"
                   >
                     <div className="font-heading text-[10px] tracking-[0.1em] text-muted-foreground uppercase">
-                      {ABILITY_SHORT[k]}
+                      {t(`abilityShort.${k}`)}
                     </div>
                     <div className="font-mono text-2xl leading-tight font-semibold">
                       {s}
@@ -360,7 +348,7 @@ export default function CharacterDetailPage() {
                     <div className="font-mono text-xs text-gold">
                       {formatModifier(abilityModifier(s))}
                     </div>
-                    <div className="sr-only">{ABILITY_LABELS[k]}</div>
+                    <div className="sr-only">{t(`ability.${k}`)}</div>
                   </li>
                 );
               })}
@@ -369,73 +357,96 @@ export default function CharacterDetailPage() {
         </Card>
       </div>
 
-      {(sheet.story.description ||
-        sheet.story.backstory ||
-        sheet.story.personality ||
-        sheet.story.ideals ||
-        sheet.story.bonds ||
-        sheet.story.flaws) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Historia</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3 text-sm">
-            {sheet.story.description && (
-              <section>
-                <h3 className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
-                  Descripción
-                </h3>
-                <p className="whitespace-pre-wrap">{sheet.story.description}</p>
-              </section>
-            )}
-            {sheet.story.backstory && (
-              <section>
-                <h3 className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
-                  Trasfondo
-                </h3>
-                <p className="whitespace-pre-wrap">{sheet.story.backstory}</p>
-              </section>
-            )}
-            <div className="grid gap-3 sm:grid-cols-2">
-              {sheet.story.personality && (
-                <section>
-                  <h3 className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
-                    Personalidad
-                  </h3>
-                  <p className="whitespace-pre-wrap">
-                    {sheet.story.personality}
-                  </p>
-                </section>
-              )}
-              {sheet.story.ideals && (
-                <section>
-                  <h3 className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
-                    Ideales
-                  </h3>
-                  <p className="whitespace-pre-wrap">{sheet.story.ideals}</p>
-                </section>
-              )}
-              {sheet.story.bonds && (
-                <section>
-                  <h3 className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
-                    Vínculos
-                  </h3>
-                  <p className="whitespace-pre-wrap">{sheet.story.bonds}</p>
-                </section>
-              )}
-              {sheet.story.flaws && (
-                <section>
-                  <h3 className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
-                    Defectos
-                  </h3>
-                  <p className="whitespace-pre-wrap">{sheet.story.flaws}</p>
-                </section>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <ProficienciesCard sheet={sheet} />
+
+      <StoryCard story={sheet.story} />
     </div>
+  );
+}
+
+const STORY: [keyof Character["sheet"]["story"], I18nKey][] = [
+  ["description", "char.description"],
+  ["backstory", "char.backstory"],
+  ["personality", "char.personality"],
+  ["ideals", "char.ideals"],
+  ["bonds", "char.bonds"],
+  ["flaws", "char.flaws"],
+];
+
+function StoryCard({ story }: { story: Character["sheet"]["story"] }) {
+  const { t } = useI18n();
+  const filled = STORY.filter(([k]) => story[k]);
+  if (!filled.length) return null;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("char.step.story")}</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
+        {filled.map(([k, label]) => (
+          <section key={k} className={k === "description" || k === "backstory" ? "sm:col-span-2" : undefined}>
+            <h3 className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">{t(label)}</h3>
+            <p className="whitespace-pre-wrap">{story[k]}</p>
+          </section>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Salvaciones y habilidades con su bonus; ● competencia, ◆ pericia. */
+function ProficienciesCard({ sheet }: { sheet: Character["sheet"] }) {
+  const { t } = useI18n();
+  const prof = sheet.proficiencies;
+  const mark = (on: boolean, double = false) => (
+    <span aria-hidden className={on ? "text-gold" : "text-muted-foreground/40"}>
+      {double ? "◆" : on ? "●" : "○"}
+    </span>
+  );
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("char.proficiencies")}</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-4 text-sm sm:grid-cols-[1fr_2fr]">
+        <section>
+          <h3 className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">{t("char.saves")}</h3>
+          <ul className="flex flex-col gap-1">
+            {ABILITIES.map((k) => {
+              const on = prof?.saves.includes(k) ?? false;
+              return (
+                <li key={k} className="flex items-center gap-2">
+                  {mark(on)}
+                  <span className="flex-1">{t(`ability.${k}`)}</span>
+                  <span className="font-mono">{formatModifier(savingThrowBonus(sheet, k))}</span>
+                  {on && <span className="sr-only">{t("char.proficient")}</span>}
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+        <section>
+          <h3 className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">{t("char.skills")}</h3>
+          <ul className="grid gap-x-4 gap-y-1 sm:grid-cols-2">
+            {SKILLS.map((skill) => {
+              const on = prof?.skills.includes(skill) ?? false;
+              const double = on && (prof?.expertise?.includes(skill) ?? false);
+              return (
+                <li key={skill} className="flex items-center gap-2">
+                  {mark(on, double)}
+                  <span className="flex-1">{t(`skill.${skill}`)}</span>
+                  <span className="font-mono">{formatModifier(skillBonus(sheet, skill))}</span>
+                  {on && <span className="sr-only">{t(double ? "char.expertise" : "char.proficient")}</span>}
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-3 text-xs text-muted-foreground">
+            {t("char.passivePerception")}: <span className="font-mono text-foreground">{passivePerception(sheet)}</span>
+          </p>
+        </section>
+      </CardContent>
+    </Card>
   );
 }
 

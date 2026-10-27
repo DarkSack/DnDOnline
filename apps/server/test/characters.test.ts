@@ -38,6 +38,9 @@ describe("personajes", () => {
       { ...sheet(), combat: { ...sheet().combat, hp: 11, hpMax: 10 } },
       { ...sheet(), identity: { ...sheet().identity, avatarUrl: "javascript:alert(1)" } },
       { ...sheet(), identity: { ...sheet().identity, avatarUrl: "http://sin-tls.example/a.png" } },
+      { ...sheet(), proficiencies: { saves: ["luck"], skills: [] } },
+      { ...sheet(), proficiencies: { saves: ["dex", "dex"], skills: [] } },
+      { ...sheet(), proficiencies: { saves: [], skills: ["stealth"], expertise: ["arcana"] } },
     ];
     for (const s of bad) expect((await as(ctx.app, me).post("/api/characters", { name: "X", sheet: s })).statusCode).toBe(400);
     expect((await as(ctx.app, me).post("/api/characters", { name: "   ", sheet: sheet() })).statusCode).toBe(400);
@@ -48,6 +51,16 @@ describe("personajes", () => {
     expect(stored).not.toHaveProperty("isAdmin");
     expect(stored.identity).not.toHaveProperty("extra");
     expect(stored.identity.avatarUrl).toBe("https://example.com/a.png");
+  });
+
+  it("guarda las competencias; las fichas sin ellas siguen valiendo", async () => {
+    const me = await register(ctx.app);
+    const proficiencies = { saves: ["dex", "int"], skills: ["stealth", "arcana"], expertise: ["stealth"] };
+    const { id } = (await as(ctx.app, me).post("/api/characters", { name: "Pícara", sheet: { ...sheet(), proficiencies } })).json();
+    expect((await as(ctx.app, me).get(`/api/characters/${id}`)).json().character.sheet.proficiencies).toEqual(proficiencies);
+
+    const { proficiencies: _old, ...legacy } = sheet();
+    expect((await as(ctx.app, me).post("/api/characters", { name: "Antigua", sheet: legacy })).statusCode).toBe(201);
   });
 
   it("nadie ajeno ve, edita ni borra un personaje: 404", async () => {

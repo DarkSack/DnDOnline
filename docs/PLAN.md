@@ -11,9 +11,9 @@ y tiene interfaz funcional.
 | 1.2 | Identidad: registro, login, logout, logout global, verificación de correo, recuperación | ✅ excepto el **envío real de correo (SMTP)** |
 | 1.3 | Campañas: crear, listar, roles, invitaciones con usos y caducidad, revocar, expulsar, cambiar rol | ✅ |
 | 1.4 | Mesa en tiempo real: chat público y susurro al DM, dados públicos, privados y secretos con ventaja/desventaja, presencia, historial filtrado | ✅ |
-| 1.5 | i18n es/en desde el inicio | ✅ en las pantallas nuevas (diccionarios en `apps/web/src/services/i18n.ts`); las antiguas siguen solo en español |
-| 1.6 | Docker (servidor + Caddy con HTTPS) y compose de producción | escrito; sin construir ni desplegar desde la fusión |
-| 1.7 | **Personajes básicos**: ficha 5e (atributos, competencias, PG, CA, nivel), CRUD con dueño y visibilidad para DM | ✅ salvo **competencias** (la ficha aún no las tiene). Creador y ficha solo en español |
+| 1.5 | i18n es/en desde el inicio | ✅ en todas las pantallas (diccionarios en `apps/web/src/services/i18n.ts`). Razas, clases y criaturas del catálogo se traducen al mostrarse; lo guardado no cambia |
+| 1.6 | Docker (servidor + Caddy con HTTPS) y compose de producción | ✅ construido y probado en local: la E2E pasa contra la pila de producción, y la CI lo repite en cada push. **Sin desplegar** (falta dominio y VPS) |
+| 1.7 | **Personajes básicos**: ficha 5e (atributos, competencias, PG, CA, nivel), CRUD con dueño y visibilidad para DM | ✅ Competencias: salvaciones, habilidades y pericia, con los bonus calculados en el motor. Los PG de un PC van y vuelven entre la mesa y su ficha |
 | 1.8 | **Prototipo del tablero**: Canvas 2D frente a PixiJS con 200 tokens, niebla y LOS en un portátil modesto; medir FPS y memoria | descartado: se quedó PixiJS, que ya funcionaba (D7). Sin medir rendimiento con 200 fichas |
 | 1.9 | **Escenas y tokens**: mapa, cuadrícula, tokens con dueño, movimiento autorizado por mensaje, tokens ocultos (por `viewFor`) | ✅ (imagen del mapa en la base, ver D10). La niebla y las paredes se pintan casilla a casilla |
 | 1.10 | **Combate**: iniciativa, turnos, PG; reutilizar `engine/combat` | ✅ La iniciativa se tira en el servidor (1d20 + bonus; un PC sin bonus usa el de su ficha). Los PG van en las fichas del tablero (1.9). Ver D11 |

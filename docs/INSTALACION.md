@@ -17,6 +17,14 @@ Pruebas de extremo a extremo: `npm run e2e`. Levantan su propia API (:3100) y we
 `dndonline_e2e`, que recrean en cada ejecución, así que no chocan con los servidores de desarrollo. En local usan el
 Microsoft Edge instalado; en otro equipo sin Edge, `npx playwright install chromium` y `CI=1 npm run e2e`.
 
+Las mismas E2E contra la pila de producción (Docker y Caddy con su CSP, que Vite no reproduce), como hace la CI:
+```bash
+POSTGRES_PASSWORD=prueba PUBLIC_ORIGIN=http://localhost DNDONLINE_DOMAIN=":80" docker compose -p dndonline-prueba -f docker-compose.prod.yml up -d --build --wait
+E2E_BASE_URL=http://localhost npm run e2e
+docker compose -p dndonline-prueba -f docker-compose.prod.yml down -v
+```
+Necesita libres los puertos 80 y 443.
+
 Sin SMTP, los enlaces de verificación y recuperación aparecen en el log del servidor (`"correo (solo desarrollo)"`).
 
 ## Producción con Docker Compose (VPS)

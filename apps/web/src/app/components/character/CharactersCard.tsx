@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CharacterSummary } from "@/services/characters";
-import { useI18n, type I18nKey } from "@/services/i18n";
+import { labelOf, useI18n, type I18nKey } from "@/services/i18n";
 
 /**
  * Tarjeta con una lista de personajes. `aside` decide qué se ve a la derecha:
@@ -55,7 +55,7 @@ export function CharactersCard({
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{c.name}</span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      {c.race} · {c.className} · {t("char.level")} {c.level}
+                      {labelOf(t, "race", c.race)} · {labelOf(t, "class", c.className)} · {t("char.level")} {c.level}
                     </span>
                   </span>
                   <span className="shrink-0 text-xs text-muted-foreground">{aside(c)}</span>

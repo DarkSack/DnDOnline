@@ -14,6 +14,9 @@
   `package.json` después, porque una vez se perdió el bloque `dependencies`.
 - Los heredocs con comillas en Git Bash fallan a veces: escribir archivos con la herramienta Write.
 - Vista previa: `dndonline-server` y `dndonline-web` en `E:\Dev\.claude\launch.json`.
-- E2E: `npm run e2e` (Playwright, `e2e/`), con su propia API, web y base. En local usa el Edge instalado.
+- E2E: `npm run e2e` (Playwright, `e2e/`), con su propia API, web y base. En local usa el Edge instalado. Con
+  `E2E_BASE_URL` prueba una instancia ya levantada, como la pila de producción (ver `docs/INSTALACION.md`).
+- CSP de producción: sin `eval`. Lo que funcione en Vite puede romperse tras Caddy (PixiJS necesitó
+  `pixi.js/unsafe-eval`); la CI corre la E2E también contra la pila de producción.
 - `typescript` va fijado a 6.x en la raíz: con la 7 (sin API de JS) typescript-eslint deja de funcionar.
 - Nunca: secretos en el repo, contraseñas o tokens en logs ni en la auditoría, ni contenido de D&D fuera del SRD.

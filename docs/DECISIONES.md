@@ -78,6 +78,10 @@ Todavía no se ha importado nada del SRD. Cuando se haga, el paquete de reglas l
 la versión, la licencia y el texto de atribución exacto. **Nada fuera del SRD:** ni libros, ni nombres de producto, ni
 la marca D&D como marca propia.
 
+Las listas del creador de personajes ya siguen esta regla a medias: el 2026-10-27 se quitó «Artificiero», que no está en
+ningún SRD (una ficha que ya lo tenga lo conserva). «Semielfo» y «Semiorco» vienen del SRD 5.1, también CC-BY-4.0, pero no
+están en el 5.2.1; se revisan al montar el paquete de reglas.
+
 ## D11. Combate en el servidor, ligado a la escena activa
 El combate es una fila de `combats` por campaña con el estado del motor (`engine/combat`) en JSON. La iniciativa la
 tira el servidor con `crypto.randomInt`. El DM y el co-DM lo inician, añaden y quitan fichas y lo terminan; un jugador

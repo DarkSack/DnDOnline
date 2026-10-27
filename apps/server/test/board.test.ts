@@ -174,6 +174,22 @@ describe("tablero", () => {
     expect((await as(ctx.app, outsider).get(`/api/scenes/${prepared}/image`)).statusCode).toBe(404);
   });
 
+  it("los PG de un PC van y vuelven entre la mesa y su personaje", async () => {
+    const t = await table();
+    let b = await t.dmDo({ type: "token.create", kind: "pc", name: "Aria", col: 0, row: 0, characterId: t.characterId, hp: 10, hpMax: 10 });
+    const aria = b.tokens.find((x) => x.name === "Aria")!;
+    await t.dmDo({ type: "token.update", tokenId: aria.id, hp: 4 });
+    const read = async () => (await as(ctx.app, t.player).get(`/api/characters/${t.characterId}`)).json().character.sheet;
+    expect((await read()).combat.hp).toBe(4);
+
+    const healed = t.ws.next((m) => m.type === "board" && boardOf(m).tokens.some((x) => x.id === aria.id && x.hp === 9));
+    const sheet = await read();
+    const patched = await as(ctx.app, t.player).patch(`/api/characters/${t.characterId}`, { sheet: { ...sheet, combat: { ...sheet.combat, hp: 9, hpMax: 12 } } });
+    expect(patched.statusCode).toBe(200);
+    b = boardOf(await healed);
+    expect(b.tokens.find((x) => x.id === aria.id)).toMatchObject({ hp: 9 });
+  });
+
   it("al borrar la escena activa, la mesa se queda sin tablero", async () => {
     const t = await table();
     const p = await connectTable(base, t.id, t.player);

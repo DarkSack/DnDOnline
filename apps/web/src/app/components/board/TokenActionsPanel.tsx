@@ -1,6 +1,7 @@
 import { Copy, Eye, EyeOff, Minus, Plus, Trash2, X } from "lucide-react";
 import type { BoardEntity } from "@dndonline/engine/board";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/services/i18n";
 
 export type TokenActionsPanelProps = {
   entity: BoardEntity;
@@ -27,13 +28,9 @@ export function TokenActionsPanel({
   onDelete,
   onClose,
 }: TokenActionsPanelProps) {
+  const { t } = useI18n();
   const hasHp = entity.hp !== undefined && entity.hpMax !== undefined;
-  const kindLabel =
-    entity.kind === "pc"
-      ? "Personaje"
-      : entity.kind === "npc"
-        ? "NPC"
-        : "Enemigo";
+  const kindLabel = t(`kind.${entity.kind}`);
 
   return (
     <div
@@ -49,7 +46,7 @@ export function TokenActionsPanel({
             {entity.name}
             {!entity.visible && (
               <span className="ml-2 rounded bg-muted px-1 py-0.5 text-[9px] uppercase tracking-wide">
-                Oculto
+                {t("token.hidden")}
               </span>
             )}
           </div>
@@ -63,7 +60,7 @@ export function TokenActionsPanel({
           type="button"
           onClick={onClose}
           className="rounded hover:bg-muted"
-          aria-label="Cerrar"
+          aria-label={t("common.close")}
         >
           <X className="size-3.5 text-muted-foreground" />
         </button>
@@ -71,13 +68,13 @@ export function TokenActionsPanel({
 
       {hasHp && (
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground">HP</span>
+          <span className="text-muted-foreground">{t("char.hp")}</span>
           <button
             type="button"
             disabled={!canControl}
             onClick={() => onHpDelta(-1)}
             className="rounded border border-border p-1 hover:bg-muted disabled:opacity-40"
-            aria-label="Restar HP"
+            aria-label={t("token.hpMinus")}
           >
             <Minus className="size-3" />
           </button>
@@ -89,7 +86,7 @@ export function TokenActionsPanel({
             disabled={!canControl}
             onClick={() => onHpDelta(1)}
             className="rounded border border-border p-1 hover:bg-muted disabled:opacity-40"
-            aria-label="Sumar HP"
+            aria-label={t("token.hpPlus")}
           >
             <Plus className="size-3" />
           </button>
@@ -118,7 +115,7 @@ export function TokenActionsPanel({
             type="button"
             onClick={onToggleVisibility}
             className="flex items-center gap-1 rounded border border-border px-2 py-1 hover:bg-muted"
-            title={entity.visible ? "Ocultar" : "Mostrar"}
+            title={entity.visible ? t("token.hide") : t("token.show")}
           >
             {entity.visible ? (
               <Eye className="size-3" />
@@ -126,26 +123,26 @@ export function TokenActionsPanel({
               <EyeOff className="size-3" />
             )}
             <span className="text-[10px]">
-              {entity.visible ? "Ocultar" : "Mostrar"}
+              {entity.visible ? t("token.hide") : t("token.show")}
             </span>
           </button>
           <button
             type="button"
             onClick={onDuplicate}
             className="flex items-center gap-1 rounded border border-border px-2 py-1 hover:bg-muted"
-            title="Duplicar"
+            title={t("token.duplicate")}
           >
             <Copy className="size-3" />
-            <span className="text-[10px]">Duplicar</span>
+            <span className="text-[10px]">{t("token.duplicate")}</span>
           </button>
           <button
             type="button"
             onClick={onDelete}
             className="ml-auto flex items-center gap-1 rounded border border-destructive/40 px-2 py-1 text-destructive hover:bg-destructive/10"
-            title="Eliminar"
+            title={t("common.delete")}
           >
             <Trash2 className="size-3" />
-            <span className="text-[10px]">Eliminar</span>
+            <span className="text-[10px]">{t("common.delete")}</span>
           </button>
         </div>
       )}

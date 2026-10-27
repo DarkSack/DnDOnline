@@ -5,6 +5,7 @@ import {
   SelectField,
   TextField,
 } from "@/app/components/character/Field";
+import { labelOf, useI18n } from "@/services/i18n";
 
 export type IdentityStepProps = {
   name: string;
@@ -13,60 +14,64 @@ export type IdentityStepProps = {
   onIdentityChange: (patch: Partial<CharacterSheet["identity"]>) => void;
 };
 
+/** Opciones de la lista más el valor guardado si no está en ella (texto libre o de una lista antigua). */
+const withCurrent = (list: readonly string[], current: string) => (list.includes(current) ? list : [...list, current]);
+
 export function IdentityStep({
   name,
   onNameChange,
   identity,
   onIdentityChange,
 }: IdentityStepProps) {
+  const { t } = useI18n();
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <TextField
-        label="Nombre del personaje"
+        label={t("char.name")}
         value={name}
         onChange={onNameChange}
         required
         className="sm:col-span-2"
       />
       <SelectField
-        label="Raza"
+        label={t("char.race")}
         value={identity.race}
         onChange={(race) => onIdentityChange({ race })}
-        options={RACES}
+        options={withCurrent(RACES, identity.race).map((v) => ({ value: v, label: labelOf(t, "race", v) }))}
       />
       <SelectField
-        label="Clase"
+        label={t("char.class")}
         value={identity.className}
         onChange={(className) => onIdentityChange({ className })}
-        options={CLASSES}
+        options={withCurrent(CLASSES, identity.className).map((v) => ({ value: v, label: labelOf(t, "class", v) }))}
       />
       <TextField
-        label="Subclase"
+        label={t("char.subclass")}
         value={identity.subclass ?? ""}
         onChange={(subclass) => onIdentityChange({ subclass })}
-        placeholder="Opcional (ej. Campeón)"
+        placeholder={t("char.subclassHint")}
       />
       <NumberField
-        label="Nivel"
+        label={t("char.levelLong")}
         value={identity.level}
         min={1}
         max={20}
         onChange={(level) => onIdentityChange({ level })}
       />
       <TextField
-        label="Trasfondo"
+        label={t("char.background")}
         value={identity.background ?? ""}
         onChange={(background) => onIdentityChange({ background })}
-        placeholder="Ej. Soldado, Erudito"
+        placeholder={t("char.backgroundHint")}
       />
       <SelectField
-        label="Alineamiento"
+        label={t("char.alignment")}
         value={identity.alignment ?? "true-neutral"}
         onChange={(alignment) => onIdentityChange({ alignment })}
-        options={ALIGNMENTS}
+        options={ALIGNMENTS.map((a) => ({ value: a.value, label: t(`alignment.${a.value}`) }))}
       />
       <TextField
-        label="URL de avatar"
+        label={t("char.avatar")}
         value={identity.avatarUrl ?? ""}
         onChange={(avatarUrl) => onIdentityChange({ avatarUrl })}
         placeholder="https://…"

@@ -5,7 +5,10 @@ import {
   allModifiers,
   formatModifier,
   initiativeBonus,
+  passivePerception,
   proficiencyBonus,
+  savingThrowBonus,
+  skillBonus,
 } from "./modifiers";
 
 describe("abilityModifier", () => {
@@ -100,5 +103,45 @@ describe("allModifiers", () => {
       wis: 1,
       cha: 5,
     });
+  });
+});
+
+describe("competencias", () => {
+  const sheet = () => {
+    const s = emptyCharacterSheet();
+    s.identity.level = 5; // competencia +3
+    s.abilities.dex = 16; // +3
+    s.abilities.wis = 12; // +1
+    return s;
+  };
+
+  it("salvación: suma la competencia solo si la tiene", () => {
+    const s = sheet();
+    expect(savingThrowBonus(s, "dex")).toBe(3);
+    s.proficiencies = { saves: ["dex"], skills: [] };
+    expect(savingThrowBonus(s, "dex")).toBe(6);
+    expect(savingThrowBonus(s, "wis")).toBe(1);
+  });
+
+  it("habilidad: competencia simple, pericia doble y la característica que toca", () => {
+    const s = sheet();
+    s.proficiencies = { saves: [], skills: ["stealth", "perception"], expertise: ["stealth"] };
+    expect(skillBonus(s, "stealth")).toBe(3 + 6);
+    expect(skillBonus(s, "perception")).toBe(1 + 3);
+    expect(skillBonus(s, "acrobatics")).toBe(3);
+    expect(passivePerception(s)).toBe(14);
+  });
+
+  it("pericia sin competencia no suma nada", () => {
+    const s = sheet();
+    s.proficiencies = { saves: [], skills: [], expertise: ["stealth"] };
+    expect(skillBonus(s, "stealth")).toBe(3);
+  });
+
+  it("una ficha antigua sin competencias usa solo los modificadores", () => {
+    const s = sheet();
+    delete s.proficiencies;
+    expect(savingThrowBonus(s, "dex")).toBe(3);
+    expect(passivePerception(s)).toBe(11);
   });
 });

@@ -44,6 +44,35 @@ export type CharacterCombat = {
   initiativeBonus?: number;
 };
 
+/** Habilidades del SRD 5.2.1; la característica de cada una está en SKILL_ABILITY. */
+export type Skill =
+  | "acrobatics"
+  | "animal-handling"
+  | "arcana"
+  | "athletics"
+  | "deception"
+  | "history"
+  | "insight"
+  | "intimidation"
+  | "investigation"
+  | "medicine"
+  | "nature"
+  | "perception"
+  | "performance"
+  | "persuasion"
+  | "religion"
+  | "sleight-of-hand"
+  | "stealth"
+  | "survival";
+
+export type CharacterProficiencies = {
+  /** Tiradas de salvación con competencia. */
+  saves: Ability[];
+  skills: Skill[];
+  /** Pericia: doble bonus de competencia. Solo en habilidades que ya están en `skills`. */
+  expertise?: Skill[];
+};
+
 export type CharacterStory = {
   backstory?: string;
   description?: string;
@@ -62,6 +91,8 @@ export type CharacterSheetV1 = {
   identity: CharacterIdentity;
   abilities: AbilityScores;
   combat: CharacterCombat;
+  /** Opcional: las fichas guardadas antes de añadirlo no lo traen. */
+  proficiencies?: CharacterProficiencies;
   story: CharacterStory;
 };
 

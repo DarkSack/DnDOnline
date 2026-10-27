@@ -61,6 +61,10 @@ repositorio cuando haga falta.
   - Autenticación: 10/min por IP, configurable con `AUTH_RATE_LIMIT`.
   - WebSocket: bolsa de 10 mensajes por conexión, que recarga 2 por segundo, con mensajes de 16 KB como máximo.
   - Cuerpo HTTP de 64 KB como máximo.
+- **Cabeceras en Caddy** (`deploy/Caddyfile`): HSTS, `nosniff`, sin `Referer` y una CSP sin `eval` ni scripts de
+  fuera. PixiJS funciona con ella gracias a `pixi.js/unsafe-eval` (importado en `BoardCanvas.tsx`), que pese al nombre
+  evita el `eval`. La CSP admite imágenes `https:` de cualquier sitio por los avatares: quien mira una ficha descarga
+  la imagen del servidor que eligió su dueño, y ese servidor ve su IP.
 - **Logs.** Se omiten la cookie, la cabecera `authorization` y `set-cookie`. Los enlaces de correo no se registran en
   producción. La auditoría nunca guarda tokens.
 - **Dados.** Las tiradas se resuelven en el servidor con `crypto.randomInt` y quedan guardadas. Aún **no** son

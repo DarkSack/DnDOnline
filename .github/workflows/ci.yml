@@ -32,3 +32,14 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
+      # La misma E2E contra la pila de producción (Docker + Caddy con su CSP), que Vite no reproduce.
+      - name: Pila de producción
+        run: docker compose -f docker-compose.prod.yml up -d --build --wait
+        env:
+          POSTGRES_PASSWORD: solo-para-ci
+          PUBLIC_ORIGIN: http://localhost
+          DNDONLINE_DOMAIN: ":80"
+      - name: E2E contra producción
+        run: npm run e2e
+        env:
+          E2E_BASE_URL: http://localhost

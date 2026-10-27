@@ -99,8 +99,8 @@ export async function applyBoardMessage(sql: Sql, campaignId: string, viewer: { 
     return null;
   }
 
-  const [token] = await sql<{ hpMax: number | null; ownerId: string | null }[]>`
-    SELECT t.hp_max AS "hpMax", ch.owner_id AS "ownerId"
+  const [token] = await sql<{ hpMax: number | null; ownerId: string | null; characterId: string | null }[]>`
+    SELECT t.hp_max AS "hpMax", ch.owner_id AS "ownerId", t.character_id AS "characterId"
     FROM tokens t LEFT JOIN characters ch ON ch.id = t.character_id
     WHERE t.id = ${msg.tokenId} AND t.scene_id = ${scene.id}`;
   if (!token) return "not_found";
@@ -123,5 +123,11 @@ export async function applyBoardMessage(sql: Sql, campaignId: string, viewer: { 
       hp = ${hp ?? sql`hp`},
       visible = ${msg.visible ?? sql`visible`}
     WHERE id = ${msg.tokenId}`;
+  // Los PG de un PC son los de su personaje: el daño en la mesa queda en la ficha.
+  if (hp !== undefined && token.characterId) {
+    await sql`
+      UPDATE characters SET sheet = jsonb_set(sheet, '{combat,hp}', to_jsonb(LEAST(${hp}::int, (sheet->'combat'->>'hpMax')::int))), updated_at = now()
+      WHERE id = ${token.characterId}`;
+  }
   return null;
 }
