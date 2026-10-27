@@ -8,13 +8,8 @@ import DashboardPage from "./pages/Dashboard";
 import NewCampaignPage from "./pages/NewCampaign";
 import CampaignDetailPage from "./pages/CampaignDetail";
 import TablePage from "./pages/Table";
-import RoomPage from "./pages/Room";
 import NewCharacterPage from "./pages/NewCharacter";
 import CharacterDetailPage from "./pages/CharacterDetail";
-import { isPreviewMode } from "@/services/preview";
-
-// Salas, tablero y combate siguen sobre el stub de Supabase: solo existen en modo preview.
-const legacy = isPreviewMode ? [{ path: "rooms/:id", element: <RoomPage /> }] : [];
 
 export const router = createBrowserRouter([
   {
@@ -40,7 +35,6 @@ export const router = createBrowserRouter([
           { path: "campaigns/:id/mesa", element: <TablePage /> },
           { path: "characters/new", element: <NewCharacterPage /> },
           { path: "characters/:id", element: <CharacterDetailPage /> },
-          ...legacy,
         ],
       },
       { path: "*", element: <Navigate to="/dashboard" replace /> },

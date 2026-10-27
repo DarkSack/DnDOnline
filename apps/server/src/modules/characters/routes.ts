@@ -15,7 +15,8 @@ type Row = { id: string; ownerId: string; ownerName: string; campaignId: string 
 
 const SUMMARY = (sql: Sql) => sql`
   c.id, c.name, c.owner_id AS "ownerId", u.display_name AS "ownerName", c.campaign_id AS "campaignId", k.name AS "campaignName",
-  c.sheet->'identity'->>'race' AS race, c.sheet->'identity'->>'className' AS "className", (c.sheet->'identity'->>'level')::int AS level`;
+  c.sheet->'identity'->>'race' AS race, c.sheet->'identity'->>'className' AS "className", (c.sheet->'identity'->>'level')::int AS level,
+  (c.sheet->'combat'->>'hp')::int AS hp, (c.sheet->'combat'->>'hpMax')::int AS "hpMax"`;
 
 /**
  * Quién ve una ficha: su dueño, y el DM o co-DM de la campaña donde juega.

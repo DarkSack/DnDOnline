@@ -14,8 +14,8 @@ y tiene interfaz funcional.
 | 1.5 | i18n es/en desde el inicio | ✅ en las pantallas nuevas (diccionarios en `apps/web/src/services/i18n.ts`); las antiguas siguen solo en español |
 | 1.6 | Docker (servidor + Caddy con HTTPS) y compose de producción | escrito; sin construir ni desplegar desde la fusión |
 | 1.7 | **Personajes básicos**: ficha 5e (atributos, competencias, PG, CA, nivel), CRUD con dueño y visibilidad para DM | ✅ salvo **competencias** (la ficha aún no las tiene). Creador y ficha solo en español |
-| 1.8 | **Prototipo del tablero**: Canvas 2D frente a PixiJS con 200 tokens, niebla y LOS en un portátil modesto; medir FPS y memoria | pendiente |
-| 1.9 | **Escenas y tokens**: mapa, cuadrícula, tokens con dueño, movimiento autorizado por mensaje, tokens ocultos (por `viewFor`) | pendiente; migrar el tablero PixiJS de `components/board` |
+| 1.8 | **Prototipo del tablero**: Canvas 2D frente a PixiJS con 200 tokens, niebla y LOS en un portátil modesto; medir FPS y memoria | descartado: se quedó PixiJS, que ya funcionaba (D7). Sin medir rendimiento con 200 fichas |
+| 1.9 | **Escenas y tokens**: mapa, cuadrícula, tokens con dueño, movimiento autorizado por mensaje, tokens ocultos (por `viewFor`) | ✅ (imagen del mapa en la base, ver D10). La niebla y las paredes se pintan casilla a casilla |
 | 1.10 | **Combate**: iniciativa, turnos, PG; reutilizar `engine/combat` | pendiente; migrar `components/combat` |
 | 1.11 | E2E con Playwright: registro → campaña → invitación → personaje → sesión con dos navegadores | pendiente |
 

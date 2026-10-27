@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { api, type CampaignSummary } from "@/services/api";
 import { useI18n } from "@/services/i18n";
 import { AppHeader } from "@/app/components/layout/AppHeader";
-import { LegacyNotice } from "@/app/components/layout/LegacyNotice";
 import { CharactersCard } from "@/app/components/character/CharactersCard";
 import { listMyCharacters } from "@/services/characters";
 
@@ -110,8 +109,6 @@ export default function DashboardPage() {
         aside={(c) => c.campaignName ?? t("char.noCampaign")}
         newHref="/characters/new"
       />
-
-      <LegacyNotice />
     </div>
   );
 }

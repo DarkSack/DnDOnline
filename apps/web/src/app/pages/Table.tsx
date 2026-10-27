@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TableChat } from "@/app/components/table/TableChat";
 import { TableDice } from "@/app/components/table/TableDice";
+import { TableBoard } from "@/app/components/board/TableBoard";
 import { api, type CampaignDetail } from "@/services/api";
 import { useAuth } from "@/services/use-auth";
 import { useI18n, type I18nKey } from "@/services/i18n";
@@ -68,6 +69,16 @@ export default function TablePage() {
           {tError(table.lastError)}
         </p>
       )}
+
+      <Card className="p-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-3 sm:px-6">
+          <h2 className="font-heading text-base font-medium">{t("board.title")}</h2>
+          <span className="hidden text-[10px] text-muted-foreground sm:block">{t("board.hint")}</span>
+        </div>
+        <div className="p-2 sm:p-3">
+          <TableBoard table={table} campaignId={campaignId} />
+        </div>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_1fr_220px]">
         <Card>

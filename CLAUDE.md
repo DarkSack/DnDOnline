@@ -4,7 +4,8 @@
 - Monorepo npm: `packages/engine` (TS puro, sin DOM ni red), `apps/server` (Fastify, un módulo por dominio en
   `src/modules/`) y `apps/web` (React, Tailwind 4 y shadcn/ui).
 - Permisos: toda ruta llama a `authorize()` o a `requireUser()`; todo mensaje WS revalida el rol contra la base. Todo
-  evento visible para otros pasa por `viewFor()` y lleva una prueba de aislamiento en `test/table.test.ts`.
+  evento visible para otros pasa por `viewFor()` (chat y dados) o `boardViewFor()` (tablero) y lleva una prueba de
+  aislamiento en `test/table.test.ts` o `test/board.test.ts`.
 - Errores: lanzar `HttpError(status, "codigo")`. El código se traduce en `apps/web/src/services/i18n.ts` (es y en): añadir
   ambos.
 - Migraciones: archivo nuevo `apps/server/migrations/NNNN_nombre.sql`. Nunca editar una ya aplicada.

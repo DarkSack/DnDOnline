@@ -21,7 +21,8 @@ export function BackgroundLayer({ url, grid }: BackgroundLayerProps) {
   useEffect(() => {
     if (!url) return;
     let alive = true;
-    Assets.load(url)
+    // La URL de la API no lleva extensión: se le dice a Pixi que es una imagen.
+    Assets.load<Texture>({ src: url, parser: "texture" })
       .then((texture: Texture) => {
         if (alive) setLoaded({ url, texture });
       })

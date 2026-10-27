@@ -5,6 +5,7 @@ import Fastify, { type FastifyServerOptions } from "fastify";
 import type { Config } from "./config.ts";
 import type { Sql } from "./db/sql.ts";
 import { HttpError, sendError } from "./http.ts";
+import { boardRoutes } from "./modules/board/routes.ts";
 import { campaignRoutes } from "./modules/campaigns/routes.ts";
 import { characterRoutes } from "./modules/characters/routes.ts";
 import { logMailer, type Mailer } from "./modules/identity/mailer.ts";
@@ -48,6 +49,7 @@ export async function buildApp({ config, sql, mailer, logger }: AppDeps) {
   await app.register(identityRoutes, deps);
   await app.register(campaignRoutes, deps);
   await app.register(characterRoutes, deps);
+  await app.register(boardRoutes, deps);
   await app.register(tableRoutes, deps);
   return app;
 }

@@ -1,27 +1,27 @@
 import { useEffect } from "react";
 import { CREATURE_CATALOG, type CreatureTemplate } from "@dndonline/engine/board";
 import { cn } from "@/lib/utils";
-import type { RoomMemberWithProfile } from "@/services/rooms";
+import type { CharacterSummary } from "@/services/characters";
 
 export type CreatureCatalogProps = {
   armed: CreatureTemplate | null;
   onArm: (t: CreatureTemplate | null) => void;
-  onSpawnPc?: (member: RoomMemberWithProfile) => void;
-  pcMembers?: RoomMemberWithProfile[];
+  onSpawnPc?: (pc: CharacterSummary) => void;
+  pcs?: CharacterSummary[];
 };
 
 /**
  * Panel del DM: click en una tarjeta arma el spawn; el siguiente click
  * sobre el tablero coloca la entidad. Escape cancela.
  *
- * Los PCs asignados a la sala se muestran como spawn especial que
- * enlaza character_id (no del catálogo genérico).
+ * Los personajes de la campaña se muestran como spawn especial que
+ * enlaza characterId (no del catálogo genérico).
  */
 export function CreatureCatalog({
   armed,
   onArm,
   onSpawnPc,
-  pcMembers = [],
+  pcs = [],
 }: CreatureCatalogProps) {
   // Escape cancela el arm.
   useEffect(() => {
@@ -76,22 +76,22 @@ export function CreatureCatalog({
         })}
       </div>
 
-      {pcMembers.length > 0 && onSpawnPc && (
+      {pcs.length > 0 && onSpawnPc && (
         <div className="flex flex-col gap-2 border-t border-border pt-3">
           <span className="text-xs font-medium text-muted-foreground">
-            PCs de la sala
+            Personajes de la campaña
           </span>
           <div className="flex flex-wrap gap-2">
-            {pcMembers.map((m) => (
+            {pcs.map((pc) => (
               <button
-                key={m.user_id}
+                key={pc.id}
                 type="button"
-                onClick={() => onSpawnPc(m)}
+                onClick={() => onSpawnPc(pc)}
                 className="rounded-md border border-border bg-input/20 px-3 py-1.5 text-xs hover:bg-input/40"
               >
-                + {m.characters!.name}
+                + {pc.name}
                 <span className="ml-2 text-[10px] text-muted-foreground">
-                  {m.profiles?.username ?? ""}
+                  {pc.ownerName}
                 </span>
               </button>
             ))}

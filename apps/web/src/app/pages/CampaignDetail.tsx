@@ -7,6 +7,7 @@ import { useAuth } from "@/services/use-auth";
 import { useI18n } from "@/services/i18n";
 import { listCampaignCharacters } from "@/services/characters";
 import { CharactersCard } from "@/app/components/character/CharactersCard";
+import { ScenesCard } from "@/app/components/campaign/ScenesCard";
 
 export default function CampaignDetailPage() {
   const { id: campaignId = "" } = useParams<{ id: string }>();
@@ -93,6 +94,7 @@ export default function CampaignDetailPage() {
           </CardContent>
         </Card>
         {manages && <InvitesCard campaignId={campaignId} />}
+        {manages && <ScenesCard campaignId={campaignId} />}
         <CharactersCard
           title="char.title"
           load={loadCharacters}

@@ -1,42 +1,17 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import WebSocket from "ws";
 import { ORIGIN, as, campaignWith, type Client, useApp } from "./helpers.ts";
+import { closeAll, connectTable, type Msg } from "./ws.ts";
 
 const ctx = useApp();
 let base = "";
-const sockets: WebSocket[] = [];
 
 beforeAll(async () => {
   const address = await ctx.app.listen({ port: 0, host: "127.0.0.1" });
   base = address.replace("http", "ws");
 });
-afterAll(() => sockets.forEach((s) => s.close()));
+afterAll(closeAll);
 
-type Msg = { type: string; [k: string]: unknown };
-
-/** Socket que acumula lo que recibe; `next(pred)` espera el primer mensaje nuevo que cumpla. */
-async function connect(campaignId: string, who: Client, origin = ORIGIN) {
-  const ws = new WebSocket(`${base}/ws/campaigns/${campaignId}`, { headers: { cookie: who.cookie, origin } });
-  sockets.push(ws);
-  const inbox: Msg[] = [];
-  const waiters: { pred: (m: Msg) => boolean; resolve: (m: Msg) => void }[] = [];
-  ws.on("message", (raw) => {
-    const m = JSON.parse(raw.toString()) as Msg;
-    inbox.push(m);
-    const i = waiters.findIndex((w) => w.pred(m));
-    if (i >= 0) waiters.splice(i, 1)[0]!.resolve(m);
-  });
-  const next = (pred: (m: Msg) => boolean) =>
-    new Promise<Msg>((resolve, reject) => {
-      waiters.push({ pred, resolve });
-      setTimeout(() => reject(new Error("timeout esperando mensaje")), 3000);
-    });
-  const hello = await Promise.race([
-    next((m) => m.type === "hello"),
-    new Promise<never>((_, reject) => ws.once("error", reject)),
-  ]);
-  return { ws, inbox, next, hello, send: (m: object) => ws.send(JSON.stringify(m)) };
-}
+const connect = (campaignId: string, who: Client, origin = ORIGIN) => connectTable(base, campaignId, who, origin);
 
 const isEvent = (pred: (e: Record<string, unknown>) => boolean) => (m: Msg) => m.type === "event" && pred(m.event as Record<string, unknown>);
 
@@ -94,6 +69,25 @@ describe("mesa en tiempo real", () => {
     const rollerAgain = await connect(id, players[0]!);
     const blind = (rollerAgain.hello.history as Record<string, unknown>[]).find((e) => e.visibility === "blind");
     expect(blind).toMatchObject({ total: null, results: null, discarded: null });
+  });
+
+  it("si bajan a un co-DM a jugador, deja de recibir susurros sin reconectar", async () => {
+    const { id, dm, players } = await campaignWith(ctx.app, { player: 2 });
+    const [demoted, whisperer] = players as [Client, Client];
+    await as(ctx.app, dm).patch(`/api/campaigns/${id}/members/${demoted.id}`, { role: "co_dm" });
+    const d = await connect(id, demoted);
+    const w = await connect(id, whisperer);
+
+    const first = d.next(isEvent((e) => e.body === "antes"));
+    w.send({ type: "chat.send", body: "antes", visibility: "private" });
+    await first;
+
+    await as(ctx.app, dm).patch(`/api/campaigns/${id}/members/${demoted.id}`, { role: "player" });
+    const own = w.next(isEvent((e) => e.body === "secreto-despues"));
+    w.send({ type: "chat.send", body: "secreto-despues", visibility: "private" });
+    await own;
+    await settle();
+    expect(JSON.stringify(d.inbox)).not.toContain("secreto-despues");
   });
 
   it("los espectadores chatean pero no tiran dados", async () => {

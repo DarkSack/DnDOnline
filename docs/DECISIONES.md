@@ -28,16 +28,31 @@ extra. La reconexión con espera exponencial está en `apps/web/src/realtime/use
 
 ## D5. Visibilidad por evento, filtrada en un solo sitio
 Cada evento de la mesa lleva `visibility` y sale únicamente a través de `viewFor()`. Al agregar un tipo de evento nuevo
-(tokens ocultos, notas del DM, etc.) hay que extender esa función y sus pruebas, no filtrar en otro lado.
+(notas del DM, etc.) hay que extender esa función y sus pruebas, no filtrar en otro lado.
+
+El tablero sigue la misma idea con `boardViewFor()` (`modules/board/view.ts`): tras cada cambio, el servidor manda a
+cada conectado el tablero entero tal como lo puede ver. A los jugadores no les llegan fichas ocultas, en la niebla o
+fuera de la vista de los PC, ni los PG de enemigos y NPC. Mandar el tablero completo en vez de diferencias cuesta algo
+más de red, pero así una ficha que sale de la vista no puede quedarse en el cliente por un mensaje perdido. Antes de
+difundir, el servidor relee los roles de todos los conectados: un co-DM degradado deja de recibir secretos al instante.
 
 ## D6. Interfaz con shadcn/ui y el tema medieval existente
 DnDOnline ya usaba shadcn/ui (estilo radix-maia) con el tema pergamino/cripta. Las pantallas nuevas reutilizan `Card`
 y `Button` de `components/ui` en lugar de introducir otro sistema.
 
-## D7. Motor del tablero: pendiente de prototipo
-El prompt pide comparar Canvas 2D y PixiJS antes de elegir. DnDOnline ya usa PixiJS 8 con `@pixi/react` (capas de
-cuadrícula, niebla, muros y visibilidad). El prototipo comparativo es la primera tarea del módulo de tablero (ver
-PLAN.md).
+## D7. Motor del tablero: PixiJS, sin prototipo comparativo
+El prompt pedía comparar Canvas 2D y PixiJS antes de elegir. DnDOnline ya tenía el tablero hecho con PixiJS 8 y
+`@pixi/react` (capas de cuadrícula, niebla, muros y visibilidad), así que se migró tal cual. **No se midió** el
+rendimiento con 200 fichas en un portátil modesto. Si se queda corto, ese prototipo vuelve al plan.
+
+## D10. Imágenes de mapa dentro de Postgres
+Las imágenes de escena (PNG, JPEG o WebP de hasta 5 MB, comprobadas por sus primeros bytes) se guardan como `bytea`
+en `scene_images`. Así el respaldo con `pg_dump` las incluye y no hace falta un volumen ni un servicio de archivos. Los
+jugadores solo pueden descargar la imagen de la escena activa.
+
+**Límite conocido:** la imagen se descarga entera; la niebla la tapa en pantalla, no en el archivo. Un jugador con
+las herramientas del navegador puede ver el mapa completo de la escena activa (pasa igual en otros VTT). **Cambiaría
+si** las imágenes crecen tanto que engordan la base: moverlas a disco o a un almacenamiento S3 compatible.
 
 ## D8. Licencia del núcleo: pendiente de decidir (Sack)
 Mientras no se decida, el código está **sin licencia** (todos los derechos reservados): `private: true` y sin

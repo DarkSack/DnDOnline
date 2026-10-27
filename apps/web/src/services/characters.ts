@@ -12,6 +12,8 @@ export type CharacterSummary = {
   race: string;
   className: string;
   level: number;
+  hp: number;
+  hpMax: number;
 };
 
 export type Character = {

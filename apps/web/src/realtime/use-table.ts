@@ -18,6 +18,29 @@ export type TableEvent =
       createdAt: string;
     };
 
+// Espejo de apps/server/src/modules/board/view.ts: lo que el servidor deja ver del tablero a cada uno.
+export type TokenView = {
+  id: string;
+  kind: "pc" | "npc" | "monster";
+  name: string;
+  col: number;
+  row: number;
+  size: number;
+  hp: number | null;
+  hpMax: number | null;
+  visible: boolean;
+  color: string | null;
+  characterId: string | null;
+  canMove: boolean;
+};
+export type BoardView = {
+  scene: { id: string; name: string; cols: number; rows: number; cellSize: number; fog: string[]; walls: string[]; imageUrl: string | null } | null;
+  tokens: TokenView[];
+  /** Celdas visibles; null = todas. */
+  mask: string[] | null;
+  manage: boolean;
+};
+
 export type Presence = { id: string; displayName: string; role: Role };
 export type TableStatus = "connecting" | "open" | "closed";
 
@@ -27,6 +50,9 @@ export function useTable(campaignId: string | undefined) {
   const [presence, setPresence] = useState<Presence[]>([]);
   const [status, setStatus] = useState<TableStatus>("connecting");
   const [lastError, setLastError] = useState<string | null>(null);
+  // Sube con cada error: quien espera respuesta a un mensaje sabe que no llegará un tablero nuevo.
+  const [errors, setErrors] = useState(0);
+  const [board, setBoard] = useState<BoardView | null>(null);
   const socket = useRef<WebSocket | null>(null);
 
   useEffect(() => {
@@ -44,10 +70,16 @@ export function useTable(campaignId: string | undefined) {
       };
       ws.onmessage = (e) => {
         const msg = JSON.parse(e.data);
-        if (msg.type === "hello") setEvents(msg.history);
-        else if (msg.type === "event") setEvents((prev) => [...prev, msg.event]);
+        if (msg.type === "hello") {
+          setEvents(msg.history);
+          setBoard(msg.board);
+        } else if (msg.type === "event") setEvents((prev) => [...prev, msg.event]);
+        else if (msg.type === "board") setBoard(msg.board);
         else if (msg.type === "presence") setPresence(msg.users);
-        else if (msg.type === "error") setLastError(msg.error);
+        else if (msg.type === "error") {
+          setLastError(msg.error);
+          setErrors((n) => n + 1);
+        }
       };
       ws.onclose = (e) => {
         setStatus("closed");
@@ -68,7 +100,7 @@ export function useTable(campaignId: string | undefined) {
     setLastError(null);
     socket.current?.send(JSON.stringify(msg));
   };
-  return { events, presence, status, lastError, send };
+  return { events, presence, status, lastError, errors, board, send };
 }
 
 export type Table = ReturnType<typeof useTable>;

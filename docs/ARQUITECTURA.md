@@ -22,10 +22,10 @@ origen. Eso es lo que permite la cookie `SameSite=Lax` y la comprobación de `Or
 | `apps/server` | Monolito modular. Un módulo por dominio en `src/modules/`. |
 | `apps/web` | SPA en React 19, Tailwind 4, shadcn/ui (tema pergamino/cripta) y react-router. |
 
-### Pantallas antiguas (sin migrar)
-Salas, tablero PixiJS y combate siguen escritos contra Supabase (`services/*.ts`, `realtime/use-live-*`).
-Ese proyecto de Supabase ya no existe, así que `services/supabase.ts` devuelve siempre el stub de `services/preview.ts`
-y esas rutas solo se registran con `VITE_UI_PREVIEW=true`. Cada una se migra al servidor propio en su tarea del plan.
+### Código antiguo (sin migrar)
+Solo queda el combate (`components/combat`, `services/combat.ts`, `services/entities.ts`, `realtime/use-live-combat.ts`),
+escrito contra Supabase y sin ninguna ruta que lo muestre. `services/supabase.ts` devuelve el stub de
+`services/preview.ts`. Se migra en la tarea 1.10 del plan.
 
 ## Módulos del servidor
 
@@ -34,10 +34,11 @@ y esas rutas solo se registran con `VITE_UI_PREVIEW=true`. Cada una se migra al 
 | `identity` | Registro, sesiones, verificación de correo, recuperación, revocación | `requireUser(req)`, `req.user` |
 | `campaigns` | Campañas, miembros, roles, invitaciones | `authorize(sql, campaignId, userId, action)`, `can(role, action)` |
 | `table` | Sala en tiempo real: chat, dados, presencia | eventos `TableEvent` y la función `viewFor` |
+| `board` | Escenas (mapa, cuadrícula, niebla, paredes, imagen) y fichas en el tablero. Los cambios llegan por el socket de la mesa y cada conectado recibe su vista | `boardViewFor`, `broadcastBoard(sql, campaignId)` |
 | `characters` | Personajes del usuario y su ficha validada (`sheet.ts`); el DM y co-DM de la campaña donde juegan los ven en solo lectura | `/api/characters`, `/api/campaigns/:id/characters` |
 | `audit` | Registro de operaciones sensibles | `audit(sql, actor, action, target, data)` |
 
-Los módulos de personajes, reglas, tablero (escenas y tokens), comunidad, biblioteca, IA y administración todavía no
+Los módulos de reglas, comunidad, biblioteca, IA y administración todavía no
 existen. Se crean cuando tengan código, siguiendo el mismo patrón: `routes.ts`, más un archivo de permisos o
 repositorio cuando haga falta.
 

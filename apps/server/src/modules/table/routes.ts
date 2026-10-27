@@ -6,10 +6,13 @@ import { z } from "zod";
 import type { Sql } from "../../db/sql.ts";
 import { HttpError, parse } from "../../http.ts";
 import { authorize, can, roleIn, type Role } from "../campaigns/permissions.ts";
+import { applyBoardMessage, boardMessages, isBoardMessage } from "../board/messages.ts";
+import { boardViewFor, loadBoard } from "../board/view.ts";
 import { requireUser } from "../identity/routes.ts";
 import { viewFor, type TableEvent } from "./visibility.ts";
 
 const ClientMessage = z.discriminatedUnion("type", [
+  ...boardMessages,
   z.object({ type: z.literal("chat.send"), body: z.string().trim().min(1).max(2000), visibility: z.enum(["public", "private"]).default("public") }),
   z.object({
     type: z.literal("dice.roll"),
@@ -36,11 +39,40 @@ const send = (socket: WebSocket, msg: unknown) => {
   if (socket.readyState === socket.OPEN) socket.send(JSON.stringify(msg));
 };
 
-function broadcast(campaignId: string, event: TableEvent) {
-  for (const conn of rooms.get(campaignId) ?? []) {
+/**
+ * Relee los roles de todos los conectados antes de difundir: si a un co-DM lo bajan a jugador,
+ * deja de recibir secretos aunque no haya mandado nada desde entonces. A quien ya no es miembro se le cierra.
+ */
+async function connsWithFreshRoles(sql: Sql, campaignId: string): Promise<Conn[]> {
+  const room = rooms.get(campaignId);
+  if (!room?.size) return [];
+  const rows = await sql<{ userId: string; role: Role }[]>`
+    SELECT user_id AS "userId", role FROM campaign_members WHERE campaign_id = ${campaignId}`;
+  const roles = new Map(rows.map((r) => [r.userId, r.role]));
+  for (const conn of room) {
+    const role = roles.get(conn.userId);
+    if (role) conn.role = role;
+    else {
+      room.delete(conn);
+      conn.socket.close(4403, "forbidden");
+    }
+  }
+  return [...room];
+}
+
+async function broadcast(sql: Sql, campaignId: string, event: TableEvent) {
+  for (const conn of await connsWithFreshRoles(sql, campaignId)) {
     const visible = viewFor(event, conn);
     if (visible) send(conn.socket, { type: "event", event: visible });
   }
+}
+
+/** Manda a cada conectado su vista del tablero. Lo usan también las rutas HTTP de escenas. */
+export async function broadcastBoard(sql: Sql, campaignId: string) {
+  const conns = await connsWithFreshRoles(sql, campaignId);
+  if (!conns.length) return;
+  const state = await loadBoard(sql, campaignId);
+  for (const conn of conns) send(conn.socket, { type: "board", board: boardViewFor(state, conn) });
 }
 
 function broadcastPresence(campaignId: string) {
@@ -109,7 +141,12 @@ export async function tableRoutes(app: FastifyInstance, { sql, publicOrigin }: {
         broadcastPresence(campaignId);
       });
 
-      send(socket, { type: "hello", role, history: (await history(sql, campaignId)).map((e) => viewFor(e, conn)).filter(Boolean) });
+      send(socket, {
+        type: "hello",
+        role,
+        history: (await history(sql, campaignId)).map((e) => viewFor(e, conn)).filter(Boolean),
+        board: boardViewFor(await loadBoard(sql, campaignId), conn),
+      });
       broadcastPresence(campaignId);
 
       async function handle(raw: string) {
@@ -131,13 +168,19 @@ export async function tableRoutes(app: FastifyInstance, { sql, publicOrigin }: {
         if (!current) return socket.close(4403, "forbidden");
         conn.role = current;
 
+        if (isBoardMessage(msg)) {
+          const error = await applyBoardMessage(sql, campaignId, conn, msg);
+          if (error) return send(socket, { type: "error", error });
+          return broadcastBoard(sql, campaignId);
+        }
+
         if (msg.type === "chat.send") {
           if (!can(current, "table.chat")) return send(socket, { type: "error", error: "forbidden" });
           const [row] = await sql<{ id: string; createdAt: Date }[]>`
             INSERT INTO chat_messages (campaign_id, user_id, body, visibility)
             VALUES (${campaignId}, ${user.id}, ${msg.body}, ${msg.visibility})
             RETURNING id::text, created_at AS "createdAt"`;
-          broadcast(campaignId, {
+          await broadcast(sql, campaignId, {
             kind: "chat",
             id: row!.id,
             userId: user.id,
@@ -157,7 +200,7 @@ export async function tableRoutes(app: FastifyInstance, { sql, publicOrigin }: {
           INSERT INTO dice_rolls (campaign_id, user_id, formula, mode, results, discarded, total, visibility)
           VALUES (${campaignId}, ${user.id}, ${msg.formula}, ${msg.mode}, ${sql.json(outcome.results)}, ${outcome.discarded}, ${outcome.total}, ${msg.visibility})
           RETURNING id::text, created_at AS "createdAt"`;
-        broadcast(campaignId, {
+        await broadcast(sql, campaignId, {
           kind: "roll",
           id: row!.id,
           userId: user.id,
