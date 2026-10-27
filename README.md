@@ -8,8 +8,9 @@ Mesa virtual de rol autohospedable: campañas, mesa en tiempo real y herramienta
 - Campañas con roles de DM, co-DM, jugador y espectador, e invitaciones con código.
 - Mesa en tiempo real con chat, susurros al DM y dados resueltos en el servidor (públicos, privados o secretos, con
   ventaja y desventaja), en español e inglés.
+- Personajes con ficha 5e (creador por pasos); el DM ve las fichas de los personajes de su campaña.
 
-Personajes, tablero PixiJS y combate existen en la web, pero aún sobre el backend anterior (Supabase, que ya no
+Tablero PixiJS y combate existen en la web, pero aún sobre el backend anterior (Supabase, que ya no
 existe): solo se ven con `VITE_UI_PREVIEW=true` y datos de ejemplo. Se migran según [docs/PLAN.md](docs/PLAN.md).
 
 - [Instalación (desarrollo, Docker, respaldo)](docs/INSTALACION.md)

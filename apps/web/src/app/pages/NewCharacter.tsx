@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/services/use-auth";
 import { createCharacter } from "@/services/characters";
+import { useI18n } from "@/services/i18n";
 import { emptyCharacterSheet, type CharacterSheet } from "@dndonline/engine/character";
 import { StepIndicator } from "@/app/components/character/StepIndicator";
 import { IdentityStep } from "@/app/components/character/steps/IdentityStep";
@@ -14,8 +14,10 @@ import { StoryStep } from "@/app/components/character/steps/StoryStep";
 const STEPS = ["Identidad", "Atributos", "Combate", "Historia"] as const;
 
 export default function NewCharacterPage() {
-  const { user } = useAuth();
+  const { tError } = useI18n();
   const navigate = useNavigate();
+  // Desde la página de una campaña: el personaje nace ya vinculado a ella.
+  const campaignId = useSearchParams()[0].get("campaign");
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [sheet, setSheet] = useState<CharacterSheet>(() =>
@@ -38,18 +40,18 @@ export default function NewCharacterPage() {
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!user || !identityValid) return;
+    if (!identityValid) return;
     setPending(true);
     setError(null);
     try {
       const created = await createCharacter({
-        ownerId: user.id,
         name: name.trim(),
         sheet,
+        campaignId,
       });
       navigate(`/characters/${created.id}`, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo crear");
+      setError(tError((err as { code?: string }).code ?? "internal"));
       setPending(false);
     }
   };
@@ -57,7 +59,7 @@ export default function NewCharacterPage() {
   return (
     <div className="mx-auto flex min-h-svh max-w-2xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
       <Link
-        to="/dashboard"
+        to={campaignId ? `/campaigns/${campaignId}` : "/dashboard"}
         className="text-xs text-muted-foreground hover:underline"
       >
         ← Volver
@@ -126,7 +128,7 @@ export default function NewCharacterPage() {
             )}
 
             {error && (
-              <p className="text-xs text-destructive">{error}</p>
+              <p role="alert" className="text-xs text-destructive">{error}</p>
             )}
 
             <div className="flex items-center justify-between">

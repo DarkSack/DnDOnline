@@ -10,12 +10,23 @@ export type Action =
   | "campaign.change_roles"
   | "table.chat"
   | "table.roll"
-  | "table.see_private"; // tiradas privadas y secretas de otros, susurros al DM
+  | "table.see_private" // tiradas privadas y secretas de otros, susurros al DM
+  | "character.bring" // llevar un personaje propio a la campaña
+  | "character.read_all"; // ver las fichas de todos los personajes de la campaña
 
 const MATRIX: Record<Role, ReadonlySet<Action>> = {
-  dm: new Set(["campaign.read", "campaign.manage", "campaign.change_roles", "table.chat", "table.roll", "table.see_private"]),
-  co_dm: new Set(["campaign.read", "campaign.manage", "table.chat", "table.roll", "table.see_private"]),
-  player: new Set(["campaign.read", "table.chat", "table.roll"]),
+  dm: new Set([
+    "campaign.read",
+    "campaign.manage",
+    "campaign.change_roles",
+    "table.chat",
+    "table.roll",
+    "table.see_private",
+    "character.bring",
+    "character.read_all",
+  ]),
+  co_dm: new Set(["campaign.read", "campaign.manage", "table.chat", "table.roll", "table.see_private", "character.bring", "character.read_all"]),
+  player: new Set(["campaign.read", "table.chat", "table.roll", "character.bring"]),
   spectator: new Set(["campaign.read", "table.chat"]),
 };
 

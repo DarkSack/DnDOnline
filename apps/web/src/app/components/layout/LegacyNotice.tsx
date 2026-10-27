@@ -18,9 +18,6 @@ export function LegacyNotice() {
         <p>{t("legacy.body")}</p>
         {isPreviewMode && (
           <p className="flex flex-wrap gap-3">
-            <Link to="/characters/new" className="text-primary hover:underline">
-              /characters/new
-            </Link>
             <Link to="/rooms/r0000000-0000-4000-8000-000000000001" className="text-primary hover:underline">
               /rooms (maqueta)
             </Link>

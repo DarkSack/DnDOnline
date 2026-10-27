@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { api, type CampaignDetail, type Invite } from "@/services/api";
 import { useAuth } from "@/services/use-auth";
 import { useI18n } from "@/services/i18n";
+import { listCampaignCharacters } from "@/services/characters";
+import { CharactersCard } from "@/app/components/character/CharactersCard";
 
 export default function CampaignDetailPage() {
   const { id: campaignId = "" } = useParams<{ id: string }>();
@@ -23,6 +25,8 @@ export default function CampaignDetailPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  const loadCharacters = useCallback(() => listCampaignCharacters(campaignId), [campaignId]);
 
   if (loadError) {
     return (
@@ -89,6 +93,13 @@ export default function CampaignDetailPage() {
           </CardContent>
         </Card>
         {manages && <InvitesCard campaignId={campaignId} />}
+        <CharactersCard
+          title="char.title"
+          load={loadCharacters}
+          empty="char.noneHere"
+          aside={(c) => c.ownerName}
+          newHref={role === "spectator" ? null : `/characters/new?campaign=${campaignId}`}
+        />
       </div>
     </div>
   );

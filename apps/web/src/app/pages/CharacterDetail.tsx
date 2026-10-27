@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/services/use-auth";
+import { api, type CampaignSummary } from "@/services/api";
 import {
   deleteCharacter,
   getCharacter,
   updateCharacter,
   type Character,
 } from "@/services/characters";
+import { useI18n } from "@/services/i18n";
 import {
   ABILITIES,
   ABILITY_LABELS,
@@ -29,9 +30,10 @@ const STEPS = ["Identidad", "Atributos", "Combate", "Historia"] as const;
 
 export default function CharacterDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { tError } = useI18n();
   const navigate = useNavigate();
   const [character, setCharacter] = useState<Character | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
@@ -41,26 +43,20 @@ export default function CharacterDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(0);
 
+  const load = useCallback(
+    () =>
+      getCharacter(id ?? "")
+        .then(({ character: c, canEdit }) => {
+          setCharacter(c);
+          setIsOwner(canEdit);
+        }, () => setNotFound(true))
+        .finally(() => setLoading(false)),
+    [id],
+  );
+
   useEffect(() => {
-    if (!id) return;
-    let alive = true;
-    (async () => {
-      try {
-        const c = await getCharacter(id);
-        if (!alive) return;
-        if (!c) {
-          setNotFound(true);
-          return;
-        }
-        setCharacter(c);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [id]);
+    void load();
+  }, [load]);
 
   const startEdit = () => {
     if (!character) return;
@@ -81,15 +77,15 @@ export default function CharacterDetailPage() {
     setSaving(true);
     setError(null);
     try {
-      const updated = await updateCharacter(id, {
-        name: draft.name,
+      await updateCharacter(id, {
+        name: draft.name.trim(),
         sheet: draft.sheet,
       });
-      setCharacter(updated);
+      await load();
       setEditing(false);
       setDraft(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo guardar");
+      setError(tError((err as { code?: string }).code ?? "internal"));
     } finally {
       setSaving(false);
     }
@@ -121,8 +117,6 @@ export default function CharacterDetailPage() {
       </div>
     );
   }
-
-  const isOwner = character.owner_id === user?.id;
 
   if (editing && draft) {
     return (
@@ -249,10 +243,10 @@ export default function CharacterDetailPage() {
   return (
     <div className="mx-auto flex min-h-svh max-w-3xl flex-col gap-4 p-4 sm:gap-6 sm:p-6">
       <Link
-        to="/dashboard"
+        to={!isOwner && character.campaignId ? `/campaigns/${character.campaignId}` : "/dashboard"}
         className="text-xs text-muted-foreground hover:underline"
       >
-        ← Dashboard
+        ← Volver
       </Link>
 
       <header className="flex flex-wrap items-start justify-between gap-4">
@@ -275,6 +269,20 @@ export default function CharacterDetailPage() {
               {sheet.identity.subclass ? ` (${sheet.identity.subclass})` : ""} ·
               Nivel {sheet.identity.level}
             </p>
+            {isOwner ? (
+              <CampaignPicker
+                value={character.campaignId}
+                onChange={async (campaignId) => {
+                  await updateCharacter(character.id, { campaignId });
+                  await load();
+                }}
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                De {character.ownerName}
+                {character.campaignName ? ` · ${character.campaignName}` : ""}
+              </p>
+            )}
           </div>
         </div>
         {isOwner && (
@@ -428,5 +436,50 @@ export default function CharacterDetailPage() {
         </Card>
       )}
     </div>
+  );
+}
+
+/** Campaña donde juega el personaje; su DM podrá ver la ficha. Solo campañas donde el dueño no es espectador. */
+function CampaignPicker({ value, onChange }: { value: string | null; onChange: (campaignId: string | null) => Promise<void> }) {
+  const { t, tError } = useI18n();
+  const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api<{ campaigns: CampaignSummary[] }>("/api/campaigns").then(
+      (r) => setCampaigns(r.campaigns.filter((c) => c.role !== "spectator")),
+      () => setCampaigns([]),
+    );
+  }, []);
+
+  return (
+    <label className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+      {t("char.campaign")}
+      <select
+        value={value ?? ""}
+        disabled={pending}
+        onChange={async (e) => {
+          setPending(true);
+          setError(null);
+          try {
+            await onChange(e.target.value || null);
+          } catch (err) {
+            setError(tError((err as { code?: string }).code ?? "internal"));
+          } finally {
+            setPending(false);
+          }
+        }}
+        className="rounded-md border border-border px-2 py-1 text-xs"
+      >
+        <option value="">{t("char.noCampaign")}</option>
+        {campaigns.map((c) => (
+          <option key={c.id} value={c.id}>
+            {c.name}
+          </option>
+        ))}
+      </select>
+      {error && <span role="alert" className="text-destructive">{error}</span>}
+    </label>
   );
 }

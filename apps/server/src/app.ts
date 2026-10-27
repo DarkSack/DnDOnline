@@ -6,6 +6,7 @@ import type { Config } from "./config.ts";
 import type { Sql } from "./db/sql.ts";
 import { HttpError, sendError } from "./http.ts";
 import { campaignRoutes } from "./modules/campaigns/routes.ts";
+import { characterRoutes } from "./modules/characters/routes.ts";
 import { logMailer, type Mailer } from "./modules/identity/mailer.ts";
 import { identityRoutes } from "./modules/identity/routes.ts";
 import { SESSION_COOKIE, userForToken } from "./modules/identity/sessions.ts";
@@ -46,6 +47,7 @@ export async function buildApp({ config, sql, mailer, logger }: AppDeps) {
   const deps = { sql, config, publicOrigin: config.publicOrigin, mailer: mailer ?? logMailer(app.log, config.env) };
   await app.register(identityRoutes, deps);
   await app.register(campaignRoutes, deps);
+  await app.register(characterRoutes, deps);
   await app.register(tableRoutes, deps);
   return app;
 }

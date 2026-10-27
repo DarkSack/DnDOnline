@@ -13,14 +13,8 @@ import NewCharacterPage from "./pages/NewCharacter";
 import CharacterDetailPage from "./pages/CharacterDetail";
 import { isPreviewMode } from "@/services/preview";
 
-// Personajes, salas, tablero y combate siguen sobre el stub de Supabase: solo existen en modo preview.
-const legacy = isPreviewMode
-  ? [
-      { path: "rooms/:id", element: <RoomPage /> },
-      { path: "characters/new", element: <NewCharacterPage /> },
-      { path: "characters/:id", element: <CharacterDetailPage /> },
-    ]
-  : [];
+// Salas, tablero y combate siguen sobre el stub de Supabase: solo existen en modo preview.
+const legacy = isPreviewMode ? [{ path: "rooms/:id", element: <RoomPage /> }] : [];
 
 export const router = createBrowserRouter([
   {
@@ -44,6 +38,8 @@ export const router = createBrowserRouter([
           { path: "campaigns/new", element: <NewCampaignPage /> },
           { path: "campaigns/:id", element: <CampaignDetailPage /> },
           { path: "campaigns/:id/mesa", element: <TablePage /> },
+          { path: "characters/new", element: <NewCharacterPage /> },
+          { path: "characters/:id", element: <CharacterDetailPage /> },
           ...legacy,
         ],
       },

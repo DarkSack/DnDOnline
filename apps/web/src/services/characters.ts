@@ -1,82 +1,42 @@
-import { supabase } from "./supabase";
-import type { Database } from "./database.types";
 import type { CharacterSheet } from "@dndonline/engine/character";
-import { isCharacterSheet } from "@dndonline/engine/character";
+import { api } from "./api";
 
-export type CharacterRow = Database["public"]["Tables"]["characters"]["Row"];
-
-export type Character = Omit<CharacterRow, "sheet"> & {
-  sheet: CharacterSheet;
+/** Fila de listado (apps/server/src/modules/characters/routes.ts). */
+export type CharacterSummary = {
+  id: string;
+  name: string;
+  ownerId: string;
+  ownerName: string;
+  campaignId: string | null;
+  campaignName: string | null;
+  race: string;
+  className: string;
+  level: number;
 };
 
-function hydrate(row: CharacterRow): Character {
-  const sheet = isCharacterSheet(row.sheet) ? row.sheet : null;
-  if (!sheet) {
-    throw new Error(
-      `Character ${row.id} tiene un sheet con formato inválido o versión no soportada.`,
-    );
-  }
-  return { ...row, sheet };
-}
-
-export async function listMyCharacters(ownerId: string): Promise<Character[]> {
-  const { data, error } = await supabase
-    .from("characters")
-    .select("*")
-    .eq("owner_id", ownerId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map(hydrate);
-}
-
-export async function getCharacter(id: string): Promise<Character | null> {
-  const { data, error } = await supabase
-    .from("characters")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw error;
-  return data ? hydrate(data) : null;
-}
-
-export async function createCharacter(input: {
-  ownerId: string;
+export type Character = {
+  id: string;
   name: string;
+  ownerId: string;
+  ownerName: string;
+  campaignId: string | null;
+  campaignName: string | null;
   sheet: CharacterSheet;
-}): Promise<Character> {
-  const { data, error } = await supabase
-    .from("characters")
-    .insert({
-      owner_id: input.ownerId,
-      name: input.name,
-      sheet: input.sheet as unknown as Record<string, unknown>,
-    })
-    .select()
-    .single();
-  if (error) throw error;
-  return hydrate(data);
-}
+  updatedAt: string;
+};
 
-export async function updateCharacter(
-  id: string,
-  patch: { name?: string; sheet?: CharacterSheet },
-): Promise<Character> {
-  const update: Database["public"]["Tables"]["characters"]["Update"] = {};
-  if (patch.name !== undefined) update.name = patch.name;
-  if (patch.sheet !== undefined)
-    update.sheet = patch.sheet as unknown as Record<string, unknown>;
+export const listMyCharacters = () => api<{ characters: CharacterSummary[] }>("/api/characters").then((r) => r.characters);
 
-  const { data, error } = await supabase
-    .from("characters")
-    .update(update)
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return hydrate(data);
-}
+export const listCampaignCharacters = (campaignId: string) =>
+  api<{ characters: CharacterSummary[] }>(`/api/campaigns/${campaignId}/characters`).then((r) => r.characters);
 
-export async function deleteCharacter(id: string) {
-  const { error } = await supabase.from("characters").delete().eq("id", id);
-  if (error) throw error;
-}
+/** `canEdit` solo es true para el dueño; el DM de la campaña la ve en modo lectura. */
+export const getCharacter = (id: string) => api<{ character: Character; canEdit: boolean }>(`/api/characters/${id}`);
+
+export const createCharacter = (input: { name: string; sheet: CharacterSheet; campaignId: string | null }) =>
+  api<{ id: string }>("/api/characters", { body: input });
+
+export const updateCharacter = (id: string, patch: { name?: string; sheet?: CharacterSheet; campaignId?: string | null }) =>
+  api(`/api/characters/${id}`, { method: "PATCH", body: patch });
+
+export const deleteCharacter = (id: string) => api(`/api/characters/${id}`, { method: "DELETE" });

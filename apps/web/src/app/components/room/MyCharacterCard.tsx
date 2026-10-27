@@ -1,11 +1,11 @@
 import { Link } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Character } from "@/services/characters";
+import type { CharacterSummary } from "@/services/characters";
 import type { RoomMemberWithProfile } from "@/services/rooms";
 
 export type MyCharacterCardProps = {
   myMember: RoomMemberWithProfile | null;
-  myCharacters: Character[];
+  myCharacters: CharacterSummary[];
   assigning: boolean;
   onAssign: (characterId: string) => void;
 };
@@ -44,8 +44,8 @@ export function MyCharacterCard({
               <option value="">Sin asignar</option>
               {myCharacters.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name} · {c.sheet.identity.className} Nv{" "}
-                  {c.sheet.identity.level}
+                  {c.name} · {c.className} Nv{" "}
+                  {c.level}
                 </option>
               ))}
             </select>

@@ -8,7 +8,7 @@ import {
   setMemberCharacter,
   type RoomWithCampaign,
 } from "@/services/rooms";
-import { listMyCharacters, type Character } from "@/services/characters";
+import { listMyCharacters, type CharacterSummary } from "@/services/characters";
 import { useRoomChannel } from "@/realtime/use-room-channel";
 import {
   useRoomPresence,
@@ -30,7 +30,7 @@ export default function RoomPage() {
   const [room, setRoom] = useState<RoomWithCampaign | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [myCharacters, setMyCharacters] = useState<Character[]>([]);
+  const [myCharacters, setMyCharacters] = useState<CharacterSummary[]>([]);
   const [assigning, setAssigning] = useState(false);
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export default function RoomPage() {
   useEffect(() => {
     if (!user) return;
     let alive = true;
-    listMyCharacters(user.id)
+    listMyCharacters()
       .then((cs) => {
         if (alive) setMyCharacters(cs);
       })

@@ -23,7 +23,7 @@ origen. Eso es lo que permite la cookie `SameSite=Lax` y la comprobación de `Or
 | `apps/web` | SPA en React 19, Tailwind 4, shadcn/ui (tema pergamino/cripta) y react-router. |
 
 ### Pantallas antiguas (sin migrar)
-Personajes, salas, tablero PixiJS y combate siguen escritos contra Supabase (`services/*.ts`, `realtime/use-live-*`).
+Salas, tablero PixiJS y combate siguen escritos contra Supabase (`services/*.ts`, `realtime/use-live-*`).
 Ese proyecto de Supabase ya no existe, así que `services/supabase.ts` devuelve siempre el stub de `services/preview.ts`
 y esas rutas solo se registran con `VITE_UI_PREVIEW=true`. Cada una se migra al servidor propio en su tarea del plan.
 
@@ -34,6 +34,7 @@ y esas rutas solo se registran con `VITE_UI_PREVIEW=true`. Cada una se migra al 
 | `identity` | Registro, sesiones, verificación de correo, recuperación, revocación | `requireUser(req)`, `req.user` |
 | `campaigns` | Campañas, miembros, roles, invitaciones | `authorize(sql, campaignId, userId, action)`, `can(role, action)` |
 | `table` | Sala en tiempo real: chat, dados, presencia | eventos `TableEvent` y la función `viewFor` |
+| `characters` | Personajes del usuario y su ficha validada (`sheet.ts`); el DM y co-DM de la campaña donde juegan los ven en solo lectura | `/api/characters`, `/api/campaigns/:id/characters` |
 | `audit` | Registro de operaciones sensibles | `audit(sql, actor, action, target, data)` |
 
 Los módulos de personajes, reglas, tablero (escenas y tokens), comunidad, biblioteca, IA y administración todavía no

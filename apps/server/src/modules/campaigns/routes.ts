@@ -129,11 +129,15 @@ export async function campaignRoutes(app: FastifyInstance, { sql }: { sql: Sql }
     const { id, userId } = parse(Id.extend({ userId: z.uuid() }), req.params);
     // Cualquiera puede irse; echar a otros exige gestionar la campaña.
     if (userId !== user.id) await authorize(sql, id, user.id, "campaign.manage");
-    const removed = await sql`
-      DELETE FROM campaign_members m USING campaigns c
-      WHERE m.campaign_id = ${id} AND m.user_id = ${userId} AND c.id = m.campaign_id AND c.owner_id <> m.user_id
-      RETURNING 1`;
-    if (!removed.length) throw new HttpError(404, "not_found");
+    await sql.begin(async (tx) => {
+      const removed = await tx`
+        DELETE FROM campaign_members m USING campaigns c
+        WHERE m.campaign_id = ${id} AND m.user_id = ${userId} AND c.id = m.campaign_id AND c.owner_id <> m.user_id
+        RETURNING 1`;
+      if (!removed.length) throw new HttpError(404, "not_found");
+      // Sus personajes salen con él: el DM deja de ver esas fichas.
+      await tx`UPDATE characters SET campaign_id = NULL WHERE owner_id = ${userId} AND campaign_id = ${id}`;
+    });
     await audit(sql, user.id, userId === user.id ? "member.leave" : "member.kick", id, { userId });
     return { ok: true };
   });
